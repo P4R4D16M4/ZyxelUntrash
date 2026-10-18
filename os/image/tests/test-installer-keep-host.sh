@@ -181,9 +181,11 @@ umount "$W/m"; vgchange -an "vg_$U8" >/dev/null; mdadm --stop /dev/md/zt-ik >/de
 
 echo "--- loader V602 (dry run) on the installed volume"
 B="$W/bin"; mkdir -p "$B"
-while read -r a; do busybox --list | grep -qx "$a" && ln -s "$(command -v busybox)" "$B/$a"; done \
-	<"$ROOT/loader/initramfs/busybox-1.19.4-applets.txt"
-ln -sf "$(command -v busybox)" "$B/sh"
+# the loader's own BusyBox (loader/busybox/build.sh), built for the PC
+HBB=$ROOT/build/busybox/host/busybox
+[[ -x $HBB ]] || "$ROOT/loader/busybox/build.sh" >&2
+while read -r a; do ln -s "$HBB" "$B/$a"; done <"$ROOT/build/busybox/applets.txt"
+ln -sf "$HBB" "$B/sh"
 gcc -O2 -o "$B/zt-blk" "$ROOT/os/loader/zt-blk.c"
 gcc -O2 -o "$B/zt-mount" "$ROOT/nas-tools/zt-mount.c"
 cp "$T/zt-sig" "$B/"

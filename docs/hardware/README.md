@@ -192,5 +192,3 @@ be loaded under 6.6 (163 unresolved symbols).
 - RTC alarm (scheduled power-on) is implemented but not observed on hardware.
 - GIC/SCU base addresses are taken from the working reconstruction, not read
   from hardware.
-- The loader still uses the stock BusyBox 1.19/glibc 2.20 as its base; an own
-  static BusyBox would make the loader fully buildable from source.

@@ -1,9 +1,9 @@
-.PHONY: help inputs nas-tools kernel loader check-loader rootfs slot update stick test test-root test-services manual docs-check
+.PHONY: help inputs nas-tools busybox kernel loader check-loader rootfs slot update stick test test-root test-services manual docs-check
 
 # UntrashOS for the Zyxel NAS542 (docs/build.md).  Everything is built from
 # this repository plus the external inputs of tools/fetch-inputs.sh (kernel and
-# kexec-tools source, PFE firmware, mkosi) and two files you provide yourself
-# (inputs/loader-base.cpio, inputs/keys/untrash-dev.sec).
+# kexec-tools and BusyBox source, PFE firmware, mkosi) and your slot signing key
+# (inputs/keys/untrash-dev.sec).
 # Output goes to build/.  Do not call this VERSION: GNU make forwards
 # command-line variables to the kernel sub-make, where VERSION is Linux'.
 RELEASE  ?= dev
@@ -18,7 +18,7 @@ help:
 	@echo "  make inputs        download + verify external inputs (inputs/)"
 	@echo "  make stick         loader + kernel + rootfs + slot -> $(STICK)"
 	@echo "  make update        signed update file for Desk -> Updates -> $(UPDATE)"
-	@echo "  make nas-tools|kernel|loader|rootfs|slot   single steps"
+	@echo "  make nas-tools|busybox|kernel|loader|rootfs|slot   single steps"
 	@echo "  make check-loader  offline contract check of build/loader.uImage [LOADER_REF=x.uImage]"
 	@echo "  make test          PC tests (no root)"
 	@echo "  make test-root     PC tests that need sudo (md/LVM/loop), TOOLROOT=<dir>"
@@ -32,10 +32,13 @@ inputs:
 nas-tools:
 	nas-tools/build.sh
 
+busybox:
+	loader/busybox/build.sh
+
 kernel:
 	kernel/build-kernel.sh system
 
-loader: nas-tools
+loader: nas-tools busybox
 	kernel/build-kernel.sh loader
 	$(MAKE) check-loader
 

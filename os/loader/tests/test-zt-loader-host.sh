@@ -3,7 +3,7 @@
 #   sudo test-zt-loader-host.sh TOOLROOT
 # TOOLROOT: extracted Debian mdadm/lvm2/dmsetup debs (see test-zt-blk-host.sh).
 # The loader runs under the host BusyBox with only the applets of the NAS
-# loader's BusyBox 1.19 (initramfs-v565-ssh/busybox-1.19.4-applets.txt) plus
+# loader's own BusyBox 1.37 (loader/busybox/, built for the PC) plus
 # x86 builds of zt-blk, zt-mount and zt-sig.  Synthetic stock disks on loop
 # files: md raid1 (2 members) with LVM (vg_info_area, lv_sys with /.untrash,
 # lv_other), md raid1 (1 member) with ext4 directly, a FAT stick.
@@ -47,9 +47,11 @@ L=; mkloop() { truncate -s "$2" "$W/$1"; L=$(losetup -f --show "$W/$1"); LOOPS+=
 
 # tools: BusyBox 1.19 applet set + x86 zt-*
 B="$W/bin"; mkdir -p "$B"
-while read -r a; do busybox --list | grep -qx "$a" && ln -s "$(command -v busybox)" "$B/$a"; done \
-	<"$ROOT/loader/initramfs/busybox-1.19.4-applets.txt"
-ln -sf "$(command -v busybox)" "$B/sh"	# /bin/sh is a separate link in the loader image
+# the loader's own BusyBox (loader/busybox/build.sh), built for the PC
+HBB=$ROOT/build/busybox/host/busybox
+[[ -x $HBB ]] || "$ROOT/loader/busybox/build.sh" >&2
+while read -r a; do ln -s "$HBB" "$B/$a"; done <"$ROOT/build/busybox/applets.txt"
+ln -sf "$HBB" "$B/sh"	# /bin/sh is a separate link in the loader image
 gcc -O2 -o "$B/zt-blk" "$ROOT/os/loader/zt-blk.c"
 gcc -O2 -o "$B/zt-mount" "$ROOT/nas-tools/zt-mount.c"
 gcc -O2 -I"$ROOT/third_party/tweetnacl" -o "$B/zt-sig" "$ROOT/os/loader/zt-sig.c" "$ROOT/third_party/tweetnacl/tweetnacl.c"

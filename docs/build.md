@@ -23,10 +23,11 @@ sudo apt install build-essential gcc-arm-linux-gnueabihf bc bison flex libssl-de
 |---|---|
 | `inputs/src/linux-6.6.145.tar.xz` | kernel.org |
 | `inputs/src/kexec-tools-2.0.31.tar.xz` | kernel.org |
+| `inputs/src/busybox-1.37.0.tar.bz2` | busybox.net (static userland of the loader) |
 | `inputs/pfe-firmware/*_c2000*.elf` | network engine (PFE) firmware, pfe_13 set, from github.com/scpcom/linux (branch `ls1024a-6.1.y`, pinned commit). NXP/Freescale firmware without a stated license: you download it, this project does not redistribute it. It ends up in the system image only. |
 | `inputs/mkosi/` | github.com/systemd/mkosi, v25.3 |
 
-You provide two files yourself:
+You provide one file yourself:
 
 - **`inputs/keys/untrash-dev.sec`**: your secret key for signing system
   images.  Create a pair with `zt-sig`:
@@ -39,12 +40,6 @@ You provide two files yourself:
   The public key in `os/loader/keys/` goes into loader and system; a NAS only
   accepts system images signed with a key it knows.
 
-- **`inputs/loader-base.cpio`**: BusyBox 1.19.4 and glibc 2.20 of the stock
-  Zyxel firmware (GPL/LGPL).  The loader's initramfs is built on top of them.
-  Extract `/bin/busybox` and `/lib/{ld,libc,libm}-2.20-2014.11.so` from the
-  stock root file system (UBI volume `rootfs` in NAND `rootfs1`, or the
-  official firmware download) into a newc cpio with these paths.  Replacing
-  this base with a BusyBox built from source is an open task.
 
 Optional, only for `make test` (the PartnerKey dry runs are skipped without
 them): `inputs/test/stock-env-mtd2.bin` (a stock Barebox environment dump),
@@ -58,6 +53,7 @@ device; keep them private.
 ```
 make inputs              # download + verify
 make kernel              # build/kernel-system: zImage, DTB, modules
+make busybox             # build/busybox: static BusyBox 1.37 for the loader (+ a PC build for tests)
 make loader              # build/loader.uImage (NAND loader) + offline contract check
 make rootfs              # build/image/untrash-rootfs: Debian 13 armhf
 make slot RELEASE=r1     # build/slot-r1.img: erofs + dm-verity, signed
@@ -72,7 +68,8 @@ stops if a private key would end up in the image.  The loader has no network.
 Reproducibility: the system kernel from `linux-6.6.145.tar.xz` +
 `kernel/patches` + `kernel/config/system.config` is bit-identical to the
 hardware-tested kernel (release string `6.6.145+`, fixed timestamps); so are
-the helpers in `nas-tools/` (`zt-kexec` up to its build ID).  The stick image is
+the helpers in `nas-tools/` (`zt-kexec` up to its build ID).  BusyBox builds
+reproducibly too.  The loader contains only static programs built here.  The stick image is
 bit-identical for equal inputs; the system image is not quite (random
 dm-verity salt).
 
@@ -95,7 +92,7 @@ ad filter (real dnsmasq), the watchdog keeper, sounds and the translations.
 | Path | Content |
 |---|---|
 | `kernel/` | patch series for Linux 6.6.145, full configs (system, loader), build script |
-| `loader/` | loader initramfs: `rc.ssh`, `zt-init.c`, module list, build script |
+| `loader/` | loader initramfs (`rc.ssh`, `zt-init.c`, module list) and its BusyBox config |
 | `os/loader/` | stage-1 loader `zt-loader`, `zt-blk.c` (md/LVM/dm), `zt-sig.c` (Ed25519), public keys, tests |
 | `os/image/` | system image: mkosi config, `untrash-files/` (Desk, services, tools), slot builder, tests |
 | `os/install/` | installer stick, PartnerKey hook, Barebox envfs, stock restore |

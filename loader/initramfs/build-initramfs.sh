@@ -2,8 +2,7 @@
 # Build the initramfs of the NAND loader (called by kernel/build-kernel.sh).
 #   GEN=<gen_init_cpio> build-initramfs.sh MODDIR OUT
 #
-# Content: BusyBox 1.19 + glibc 2.20 of the stock firmware (inputs/loader-base.cpio,
-# see docs/build.md), the static zt-init, rc.ssh,
+# Content: a static BusyBox 1.37 (loader/busybox/build.sh), the static zt-init, rc.ssh,
 # zt-loader + zt-blk + the slot signing public keys, the nas-tools and the
 # kernel modules of MODDIR (loaded by rc.ssh, list loader/initramfs/modules.list).
 # The release loader has no network, no SSH and no device MACs; rc.ssh then
@@ -14,12 +13,11 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(cd "$HERE/../.." && pwd)
 MODDIR=${1:?module dir}; OUT=${2:?output cpio}
 IN=$ROOT/inputs; NT=$ROOT/build/nas-tools; LDR=$ROOT/os/loader
-BASE=$IN/loader-base.cpio
-for f in "$BASE" "$NT/zt-mount"; do
-	[[ -f $f ]] || { echo "missing $f (tools/fetch-inputs.sh, nas-tools/build.sh, docs/build.md)" >&2; exit 1; }
+BB=$ROOT/build/busybox
+for f in "$BB/arm/busybox" "$BB/applets.txt" "$NT/zt-mount"; do
+	[[ -f $f ]] || { echo "missing $f (loader/busybox/build.sh, nas-tools/build.sh)" >&2; exit 1; }
 done
 W=$(mktemp -d); trap 'rm -rf "$W"' EXIT
-(cd "$W" && mkdir base && cd base && cpio -id --quiet --nonmatching "dev/*" <"$BASE")
 arm-linux-gnueabihf-gcc -static -O2 -Wall -o "$W/zt-init" "$HERE/zt-init.c"
 arm-linux-gnueabihf-strip "$W/zt-init"
 arm-linux-gnueabihf-gcc -static -O2 -Wall -o "$W/zt-blk" "$LDR/zt-blk.c"
@@ -33,15 +31,13 @@ L="$W/list"
 	done
 	echo "nod /dev/console 600 0 0 c 5 1"
 	echo "nod /dev/null 666 0 0 c 1 3"
-	echo "file /bin/busybox $W/base/bin/busybox 755 0 0"
+	echo "file /bin/busybox $BB/arm/busybox 755 0 0"
 	echo "slink /bin/sh /bin/busybox 777 0 0"
-	# BusyBox 1.19.4 has no --install: link every applet at build time
-	while read -r a; do echo "slink /bin/$a /bin/busybox 777 0 0"; done <"$HERE/busybox-1.19.4-applets.txt"
-	for f in ld-2.20-2014.11.so libc-2.20-2014.11.so libm-2.20-2014.11.so; do
-		echo "file /lib/$f $W/base/lib/$f 755 0 0"; done
-	echo "slink /lib/ld-linux-armhf.so.3 /lib/ld-2.20-2014.11.so 777 0 0"
-	echo "slink /lib/libc.so.6 /lib/libc-2.20-2014.11.so 777 0 0"
-	echo "slink /lib/libm.so.6 /lib/libm-2.20-2014.11.so 777 0 0"
+	# every applet as a link in /bin (as with the stock BusyBox before)
+	while read -r a; do
+		case $a in sh|poweroff|reboot) continue ;; esac
+		echo "slink /bin/$a /bin/busybox 777 0 0"
+	done <"$BB/applets.txt"
 	# no PFE firmware: the release loader has no network (rc.ssh loads pfe.ko
 	# only for a developer key), and nothing built in requests firmware
 	echo "file /sbin/zt-poweroff $HERE/zt-poweroff 755 0 0"
