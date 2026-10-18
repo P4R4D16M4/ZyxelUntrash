@@ -1,0 +1,9 @@
+[Unit]
+Description=UntrashOS: check the power schedule every minute
+
+[Timer]
+OnCalendar=*:*:05
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

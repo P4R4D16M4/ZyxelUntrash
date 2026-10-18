@@ -1,0 +1,33 @@
+From db40b0f2c9f81597d6102a62b61fd9c02d229035 Mon Sep 17 00:00:00 2001
+From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
+Date: Thu, 8 Oct 2026 20:45:47 +0200
+Subject: [PATCH 09/15] V600b: dm-init waitfor uses msleep instead of fsleep
+
+usleep_range() never returns on the NAS542 kernels (AGENTS.md trap 7);
+dm-mod.waitfor hung the V600 system kernel before root was mounted.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ drivers/md/dm-init.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/md/dm-init.c b/drivers/md/dm-init.c
+index 423269cbd..00c302887 100644
+--- a/drivers/md/dm-init.c
++++ b/drivers/md/dm-init.c
+@@ -298,8 +298,11 @@ static int __init dm_init_init(void)
+ 			dev_t dev;
+ 
+ 			DMINFO("waiting for device %s ...", waitfor[i]);
++			/* ZyxelUntrash: msleep, not fsleep(): usleep_range() never
++			 * returns on the NAS542 kernels (low-res hrtimers, AGENTS.md
++			 * trap 7); dm-mod.waitfor hung forever (V600, 2026-10-08). */
+ 			while (early_lookup_bdev(waitfor[i], &dev))
+-				fsleep(5000);
++				msleep(5);
+ 		}
+ 	}
+ 
+-- 
+2.39.5
+

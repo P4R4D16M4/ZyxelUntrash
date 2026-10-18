@@ -1,0 +1,96 @@
+From 9544ed4b819c7a63030dca40f4ddedea5f654180 Mon Sep 17 00:00:00 2001
+From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
+Date: Sun, 18 Oct 2026 20:02:11 +0200
+Subject: [PATCH 15/15] V600j: SerDes CMU enable for PCIe (ASM1061, bays 2+4),
+ DT for buzzer and PCIe
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ arch/arm/boot/dts/mindspeed/comcerto2000.dtsi | 12 +++++++-----
+ arch/arm/boot/dts/mindspeed/zyxel-nas542.dts  |  9 +++++++++
+ drivers/phy/freescale/phy-ls1024a-serdes.c    | 11 ++++++-----
+ 3 files changed, 22 insertions(+), 10 deletions(-)
+
+diff --git a/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi b/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
+index a720889d2..db86bf14b 100644
+--- a/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
++++ b/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
+@@ -121,7 +121,7 @@ watchdog: watchdog {
+ 	};
+ 	/* ZYXELUNTRASH_RE5_V11_TIMER_END */
+ 
+-	soc {
++	soc: soc {
+ 		compatible = "simple-bus";
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+@@ -263,9 +263,11 @@ serdes2: serdes2@2 {
+ 		};
+ 
+ 		/*
+-		 * Stock 3.2.54 reports "PCIe0: Link Up Failed" on every recorded
+-		 * boot and enumerates no PCI device; 6.6 sees LTSSM Detect.Quiet.
+-		 * Nothing is attached on the NAS542, so the port stays disabled.
++		 * The stock kernel reports "PCIe0: Link Up Failed" and 6.6 previously
++		 * saw LTSSM Detect.Quiet.  Board photographs dated 2026-10-11 identify
++		 * an ASM1061 PCIe-x1 two-port SATA controller on the NAS542 four-bay
++		 * backplane, so PCIe0 is a populated root port.  Keep probing explicit
++		 * (the RAM recovery initramfs loads it only after SSH and bay power).
+ 		 */
+ 		pcie0: pcie@98000000 {
+ 			compatible = "fsl,ls1024a-pcie";
+@@ -298,7 +300,7 @@ pcie0: pcie@98000000 {
+ 					<0 0 0 2 &pcie0_intc 2>,
+ 					<0 0 0 3 &pcie0_intc 4>,
+ 					<0 0 0 4 &pcie0_intc 6>;
+-			status = "disabled";
++			status = "okay";
+ 		};
+ 
+ 		sata: sata@9d000000 {
+diff --git a/arch/arm/boot/dts/mindspeed/zyxel-nas542.dts b/arch/arm/boot/dts/mindspeed/zyxel-nas542.dts
+index b8d283caf..97afae797 100644
+--- a/arch/arm/boot/dts/mindspeed/zyxel-nas542.dts
++++ b/arch/arm/boot/dts/mindspeed/zyxel-nas542.dts
+@@ -118,6 +118,15 @@ usb-power-hog {
+ 	};
+ };
+ 
++/* Stock gpio_init: PWM5 control +0x30 |= 0x80010000; output is +0x34. */
++&soc {
++	buzzer: buzzer@90458000 {
++		compatible = "zyxel,nas542-pwm5-buzzer";
++		reg = <0x90458000 0x38>;
++		status = "okay";
++	};
++};
++
+ /* Boot SPI-NOR (uloader/Barebox/env): strictly read-only. */
+ &spi0 {
+ 	status = "okay";
+diff --git a/drivers/phy/freescale/phy-ls1024a-serdes.c b/drivers/phy/freescale/phy-ls1024a-serdes.c
+index 228068ff8..d84d6d68c 100644
+--- a/drivers/phy/freescale/phy-ls1024a-serdes.c
++++ b/drivers/phy/freescale/phy-ls1024a-serdes.c
+@@ -299,12 +299,13 @@ static int ls1024a_serdes_phy_power_on(struct phy *phy)
+ 	regmap_write_bits(phys->statregs, SDx_PHY_CTRL2(inst->idx), 0x3, 0x0);
+ 
+ 	/*
+-	 * NAS542/V579: stock serdes_phy_init() never sets CMU_CTL bit 0; the
+-	 * register keeps the table value (6).  Only Bonstra's driver set it.
++	 * V606 showed that the stock-compatible PCIe path (CMU_CTL left at the
++	 * table value 0x6) never obtains CMU_OK on NAS542.  The original
++	 * Linux-ls1024a driver enables this bit for PCIe too.  Keep this isolated
++	 * from the lane/link sequence so a failed CMU remains a safe probe error.
+ 	 */
+-	if (inst->cfg.mode != PHY_MODE_PCIE)
+-		regmap_write_bits(phys->regs, SDx_CFG_CMU(inst->idx, SD_CMU_CTL),
+-				CMU_CTL_EN, CMU_CTL_EN);
++	regmap_write_bits(phys->regs, SDx_CFG_CMU(inst->idx, SD_CMU_CTL),
++			CMU_CTL_EN, CMU_CTL_EN);
+ 	/* Release CMU reset and wait for it to come up. */
+ 	regmap_write_bits(phys->statregs, SDx_PHY_CTRL2(inst->idx),
+ 			SD_CTRL_CMU_RST, SD_CTRL_CMU_RST);
+-- 
+2.39.5
+

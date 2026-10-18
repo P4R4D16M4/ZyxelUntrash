@@ -1,0 +1,40 @@
+From ffbf0b58c03b607ff6211e7024557d0b56144d13 Mon Sep 17 00:00:00 2001
+From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
+Date: Thu, 8 Oct 2026 13:06:06 +0200
+Subject: [PATCH 07/15] V586: ls1024a_wdt without the timer reset line
+
+The shared AXI_RTC_TIM reset request fails with -EBUSY on the NAS542 and
+the timer block is already running (clocksource); make it optional.
+Hardware 2026-10-08: feeding keeps the NAS up, killing the feeder resets
+it after the 10 s timeout.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ drivers/watchdog/ls1024a_wdt.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/watchdog/ls1024a_wdt.c b/drivers/watchdog/ls1024a_wdt.c
+index 76155f75d..6dec2760f 100644
+--- a/drivers/watchdog/ls1024a_wdt.c
++++ b/drivers/watchdog/ls1024a_wdt.c
+@@ -229,10 +229,14 @@ static int ls1024a_wdt_probe(struct platform_device *pdev)
+ 		return PTR_ERR(priv->clkcore);
+ 	}
+ 
+-	priv->rst = devm_reset_control_get_shared(dev->parent, NULL);
++	/* ZyxelUntrash V586: the timer block is already out of reset (it drives
++	 * the clocksource); the shared reset line is only a nicety, and on the
++	 * NAS542 the request fails with -EBUSY. */
++	priv->rst = devm_reset_control_get_optional_shared(dev->parent, NULL);
+ 	if (IS_ERR(priv->rst)) {
+-		dev_err(dev, "Failed to get watchdog reset control\n");
+-		return PTR_ERR(priv->rst);
++		dev_warn(dev, "no watchdog reset control (%ld), continuing\n",
++			 PTR_ERR(priv->rst));
++		priv->rst = NULL;
+ 	}
+ 
+ 	priv->clk = devm_clk_get(dev->parent, NULL);
+-- 
+2.39.5
+

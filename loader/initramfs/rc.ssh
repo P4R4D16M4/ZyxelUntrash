@@ -1,0 +1,180 @@
+#!/bin/sh
+# ZyxelUntrash V565: recovery SSH on eth0 (169.254.100.64, from ip= autoconfig).
+# Key-only root login; the NAS stays up until power-off or reboot.
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+exec >/dev/console 2>&1
+echo "ZT-V565:RC_START"
+M=/lib/modules/zt
+# V590b: blackbox first (it reads /dev/kmsg from the start of the boot), so
+# that even a reset in the next steps leaves the full log on the stick.
+for m in nls_base usb-common usbcore roles phy-ls1024a-usb3 xhci-hcd \
+	 xhci-plat-hcd dwc3 scsi_common sd_mod usb-storage; do
+	[ -f $M/$m.ko ] && insmod $M/$m.ko 2>/dev/null
+done
+zt-blackbox 15 </dev/null >/dev/null 2>&1 &
+i=0
+while [ $i -lt 20 ] && ! dmesg | grep -q 'ZT-BB:'; do sleep 1; i=$((i+1)); done
+dmesg | grep 'ZT-BB:' | sed 's/^.*ZT-BB:/ZT-V585:BB_/'
+# V590c: LS1024A watchdog as a module, loaded right after the blackbox (the
+# built-in driver of V590/V590b killed the boot before rc; open item).  It may
+# already run: the loader hands over through kexec with the watchdog armed
+# (17 s, hardware maximum at 250 MHz).  Feed it from here on.
+for m in watchdog ls1024a_wdt; do [ -f $M/$m.ko ] && insmod $M/$m.ko 2>/dev/null; done
+if [ -e /dev/watchdog ]; then
+	echo "ZT-V590:WDT_START" >/dev/kmsg; sleep 1
+	watchdog -T 17 -t 4 /dev/watchdog && echo "ZT-V590:WDT_FEEDING rc=$?" >/dev/kmsg
+	sleep 2; echo "ZT-V590:WDT_DAEMON pid=$(pidof watchdog)" >/dev/kmsg
+fi
+# V603: a release loader has no operator key: no network, no SSH, no grace
+# period (zt-loader starts the system right away).  Dev loaders as before.
+DEV=0; [ -s /root/.ssh/authorized_keys ] && DEV=1
+[ $DEV = 1 ] || { echo "ZT-V603:RELEASE (no SSH)" >/dev/kmsg; export ZT_LOADER_GRACE=0; }
+# V585: vendor PFE driver (pfe.ko) instead of the built-in port driver.  Start
+# the USB blackbox (nas-tools/zt-blackbox) first, so that a hang in the PFE
+# probe leaves the kernel log on a ZTBLACKBOX1 stick.  Interface settings as
+# with the kernel ip= autoconfig of the built-in driver.
+if [ $DEV = 1 ] && [ ! -e /sys/class/net/eth0 ] && [ -f $M/pfe.ko ]; then
+	echo "ZT-V585:PFE_INSMOD" >/dev/kmsg
+	sleep 1		# let the blackbox flush the marker before the probe
+	if insmod $M/pfe.ko; then echo "ZT-V585:PFE_LOADED" >/dev/kmsg
+	else echo "ZT-V585:PFE_FAIL" >/dev/kmsg; fi
+	i=0
+	while [ $i -lt 10 ] && [ ! -e /sys/class/net/eth0 ]; do sleep 1; i=$((i+1)); done
+	# V586: the cable may sit on either port; the recovery address goes to
+	# the first interface with carrier (eth0 if none within 8 s).
+	for n in eth0 eth1; do [ -e /sys/class/net/$n ] && ifconfig $n up; done
+	IF=eth0; i=0
+	while [ $i -lt 16 ]; do
+		for n in eth0 eth1; do
+			[ "$(cat /sys/class/net/$n/carrier 2>/dev/null)" = 1 ] && { IF=$n; break 2; }
+		done
+		sleep 1; i=$((i+1))
+	done
+	# V587: stock MACs (ethaddr / eth2addr) if the image carries them.
+	ETH0_MAC=02:5a:54:00:05:64; ETH1_MAC=02:5a:54:00:05:65
+	[ -f /etc/zt-mac.env ] && . /etc/zt-mac.env
+	for n in eth0 eth1; do
+		[ -e /sys/class/net/$n ] || continue
+		ifconfig $n down
+		[ $n = eth0 ] && ifconfig $n hw ether $ETH0_MAC || ifconfig $n hw ether $ETH1_MAC
+	done
+	for n in eth0 eth1; do [ -e /sys/class/net/$n ] && ifconfig $n up; done
+	ifconfig $IF 169.254.100.64 netmask 128.0.0.0 up && echo "ZT-V586:NET_UP $IF" >/dev/kmsg
+fi
+if [ $DEV = 1 ]; then
+mkdir -p /etc/dropbear /var/log /var/run
+chmod 700 /root /root/.ssh
+chmod 600 /root/.ssh/authorized_keys
+HK=/etc/dropbear/dropbear_ed25519_host_key
+if [ -f $HK ]; then
+	dropbearkey -y -f $HK >/tmp/hostkey.txt 2>&1	# V580: persistent key
+else
+	dropbearkey -t ed25519 -f $HK >/tmp/hostkey.txt 2>&1
+fi
+echo "ZT-V565:HOSTKEY $(grep -i fingerprint /tmp/hostkey.txt)"
+ifconfig eth0 | grep -i 'inet addr' | sed 's/^ */ZT-V565:ETH0 /'
+dropbear -r /etc/dropbear/dropbear_ed25519_host_key -p 22 -s -g
+sleep 1
+if pidof dropbear >/dev/null; then
+	echo "ZT-V565:SSH_READY;PORT=22"
+else
+	echo "ZT-V565:SSH_FAILED"
+fi
+fi
+# V580: load the platform modules only after eth0/SSH are up (V578: an early
+# PCIe probe broke PFE RX).  Order matters: nls_base before usbcore.
+# V602f: HDD power exactly like stock platform_init: bay N present when
+# hddN_detect (GPIO N-1) reads low.  Each bay needs both its primary power
+# GPIO and the stock backplane-enable GPIO: HD1=8+54, HD3=10+50, then after
+# 6 s HD2=9+52, HD4=11+48.  This must happen before AHCI probes; without the
+# second line the stock four-bay multiplier/backplane exposed only two disks.
+B=$(cat /sys/class/gpio/gpiochip*/base 2>/dev/null | head -1); B=${B:-0}
+gpio_get() { [ -d /sys/class/gpio/gpio$(($B+$1)) ] || echo $(($B+$1)) >/sys/class/gpio/export; cat /sys/class/gpio/gpio$(($B+$1))/value; }
+gpio_high() { [ -d /sys/class/gpio/gpio$(($B+$1)) ] || echo $(($B+$1)) >/sys/class/gpio/export; echo high >/sys/class/gpio/gpio$(($B+$1))/direction; }
+hdd_on() {	# $1 = bay 1..4
+	if [ "$(gpio_get $(($1-1)))" = 0 ]; then
+		case "$1" in
+			1) secondary=54 ;;
+			2) secondary=52 ;;
+			3) secondary=50 ;;
+			4) secondary=48 ;;
+			*) echo "ZT-V602f:HDD$1_BAD_BAY"; return 1 ;;
+		esac
+		if gpio_high $(($1+7)) && gpio_high "$secondary"; then
+			echo "ZT-V602f:HDD$1_POWER_ON primary=$(($1+7)) secondary=$secondary"
+		else
+			echo "ZT-V602f:HDD$1_POWER_FAIL primary=$(($1+7)) secondary=$secondary"
+			return 1
+		fi
+		return 0
+	fi
+	echo "ZT-V602f:HDD$1_ABSENT"; return 1
+}
+w=0; hdd_on 1 && w=1; hdd_on 3 && w=1; [ $w = 1 ] && sleep 6
+w=0; hdd_on 2 && w=1; hdd_on 4 && w=1; [ $w = 1 ] && sleep 6
+
+M=/lib/modules/zt
+if [ -d $M ]; then
+	for m in nls_base usb-common usbcore roles phy-ls1024a-usb3 xhci-hcd \
+		 xhci-plat-hcd dwc3 scsi_common sd_mod usb-storage \
+		 phy-ls1024a-serdes libahci libahci_platform ahci_platform \
+		 i2c-ls1024a regmap-i2c rtc-ds1307 leds-gpio ledtrig-heartbeat ledtrig-timer \
+		 gpio_keys_polled; do
+		[ -f $M/$m.ko ] || continue
+		insmod $M/$m.ko 2>/dev/null && echo "ZT-V580:MOD $m" || echo "ZT-V580:MODFAIL $m"
+	done
+	# UART-free "Linux is up" indicator on the front panel.
+	[ -e /sys/class/leds/sys-green/trigger ] && echo heartbeat >/sys/class/leds/sys-green/trigger
+	echo "ZT-V580:MODULES_DONE"
+fi
+# V607: The four-bay backplane has an ASMedia ASM1061 (PCIe x1, two AHCI
+# ports).  PCIe must be brought up only after SSH and the full stock-style bay
+# power sequence: V578 showed that probing it earlier breaks PFE RX.  It only
+# enumerates; md/LVM and mounts are zt-loader's.
+# V611: also in the release loader (no PFE/SSH there).  Bays 2 and 4 sit
+# behind the ASM1061: without it a four-disk stock array shows 2/4 members and
+# the loader cannot find /.untrash (way B fell back to the installer).
+if [ -d $M ]; then
+	echo "ZT-V607:PCIE_SCAN_START" >/dev/kmsg
+	if [ -f $M/pcie-ls1024a.ko ] && insmod $M/pcie-ls1024a.ko; then
+		echo "ZT-V607:PCIE_MODULE_INSERTED" >/dev/kmsg
+	else
+		echo "ZT-V607:PCIE_MODULE_INSERT_FAIL" >/dev/kmsg
+	fi
+	# libahci is already loaded for the SoC controller.  Generic ahci binds
+	# automatically to an enumerated ASM1061 (expected PCI ID 1b21:0612).
+	if [ -f $M/ahci.ko ] && insmod $M/ahci.ko; then
+		echo "ZT-V607:PCI_AHCI_LOADED" >/dev/kmsg
+	else
+		echo "ZT-V607:PCI_AHCI_FAIL" >/dev/kmsg
+	fi
+	pcidevs=0
+	for d in /sys/bus/pci/devices/*; do
+		[ -e "$d/vendor" ] || continue
+		v=$(cat "$d/vendor" 2>/dev/null); id=$(cat "$d/device" 2>/dev/null)
+		echo "ZT-V607:PCI_DEV $(basename "$d") $v:$id" >/dev/kmsg
+		pcidevs=$((pcidevs + 1))
+	done
+	[ "$pcidevs" -gt 0 ] || echo "ZT-V607:PCI_NO_ENUMERATION" >/dev/kmsg
+	for d in /sys/class/block/sd?; do
+		[ -e "$d/dev" ] || continue
+		echo "ZT-V607:DISK $(basename "$d") $(cat "$d/dev")" >/dev/kmsg
+	done
+	echo "ZT-V607:PCIE_SCAN_DONE" >/dev/kmsg
+fi
+# V582: stock-equivalent fan control (MCU temperature -> PWM4 low time).
+if [ -x /bin/zt-fan ] && [ -e /dev/i2c-0 ]; then
+	zt-fan </dev/null >/dev/null 2>&1 &
+	echo "ZT-V582:FAN_STARTED"
+else
+	echo "ZT-V582:FAN_NOT_STARTED"
+fi
+# V589: stage-1 loader (verified slot -> kexec); rescue SSH stays up meanwhile.
+if [ -x /bin/zt-loader ]; then
+	zt-loader </dev/null >/tmp/zt-loader.log 2>&1 &
+	# V590: a slot kernel confirms itself after 60 s of healthy uptime.
+	if [ "$(cat /proc/device-tree/chosen/untrash,stage 2>/dev/null)" = system ]; then
+		( sleep 60; zt-loader mark-good ) </dev/null >>/tmp/zt-loader.log 2>&1 &
+	fi
+fi
+while :; do sleep 3600; done

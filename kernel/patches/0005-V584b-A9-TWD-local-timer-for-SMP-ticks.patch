@@ -1,0 +1,38 @@
+From f08d4e449bdd37c22ca2b262df6f0e0d04f25bb5 Mon Sep 17 00:00:00 2001
+From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
+Date: Thu, 8 Oct 2026 10:22:51 +0200
+Subject: [PATCH 05/15] V584b: A9 TWD local timer for SMP ticks
+
+V584 hardware: CPU1 came online but received no timer broadcast (dummy
+timer only), so tasks sleeping on CPU1 hung.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ arch/arm/boot/dts/mindspeed/comcerto2000.dtsi | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi b/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
+index a4bdd2857..d25a4ffa9 100644
+--- a/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
++++ b/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
+@@ -38,6 +38,17 @@ scu@fff00000 {
+ 		reg = <0xfff00000 0x100>;
+ 	};
+ 
++	/* V584b: per-CPU A9 TWD tick (stock used it as local timer).  Without it
++	 * CPU1 only had the dummy timer and no broadcast source (V584: tasks
++	 * sleeping on CPU1 never woke).  No clocks: twd calibrates against the
++	 * 250 MHz Comcerto timer tick.  The A9 global timer stays unused
++	 * (Bonstra: it prevents SMP boot on LS1024A). */
++	local-timer@fff00600 {
++		compatible = "arm,cortex-a9-twd-timer";
++		reg = <0xfff00600 0x20>;
++		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(2) | IRQ_TYPE_EDGE_RISING)>;
++	};
++
+ 	memory@4000000 {
+ 		device_type = "memory";
+ 		reg = <0x04000000 0x3c000000>;
+-- 
+2.39.5
+

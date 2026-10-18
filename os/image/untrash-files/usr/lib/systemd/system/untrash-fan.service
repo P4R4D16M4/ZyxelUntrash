@@ -1,0 +1,12 @@
+[Unit]
+Description=UntrashOS fan control (MCU temperature -> PWM4, stock app_wd table)
+# started by 60-untrash.rules as soon as /dev/i2c-0 exists
+DefaultDependencies=no
+Before=sysinit.target shutdown.target
+Conflicts=shutdown.target
+
+[Service]
+Type=simple
+ExecStart=/usr/lib/untrash/zt-fan
+Restart=always
+RestartSec=5

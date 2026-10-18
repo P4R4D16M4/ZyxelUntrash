@@ -1,0 +1,20 @@
+[Unit]
+Description=UntrashOS blackbox (kernel log to a ZTBLACKBOX1 USB stick)
+# No default dependencies: not stopped by shutdown.target.  argv[0] starts
+# with '@', so systemd-shutdown's final kill spares it (root-storage-daemon
+# convention) and the log covers the shutdown up to the power-off syscall.
+# Root slice: system.slice is stopped early in the shutdown and would take
+# the blackbox with it (P2-M3 finding).
+DefaultDependencies=no
+After=systemd-udevd.service
+Before=sysinit.target
+IgnoreOnIsolate=yes
+
+[Service]
+Slice=-.slice
+Type=simple
+ExecStart=@/usr/lib/untrash/zt-blackbox @zt-blackbox 30
+Restart=no
+
+[Install]
+WantedBy=sysinit.target

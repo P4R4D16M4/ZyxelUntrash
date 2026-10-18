@@ -1,0 +1,5 @@
+#!/bin/sh
+# zt-fan's overtemperature path calls /sbin/zt-poweroff (RAM systems: direct
+# SYS_OFF).  Under systemd: clean poweroff, forced if systemd does not answer.
+echo "UNTRASH: zt-poweroff requested" >/dev/kmsg
+systemctl poweroff || exec /usr/sbin/poweroff -f

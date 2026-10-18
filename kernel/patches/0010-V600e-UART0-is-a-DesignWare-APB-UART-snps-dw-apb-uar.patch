@@ -1,0 +1,42 @@
+From e9faab2bf5bda483a2b5e287cbdafd9a4b6c3bdd Mon Sep 17 00:00:00 2001
+From: P4R4D16M4 <patrick@heinzelbecker.com>
+Date: Fri, 9 Oct 2026 10:28:04 +0200
+Subject: [PATCH 10/15] V600e: UART0 is a DesignWare APB UART
+ (snps,dw-apb-uart)
+
+Hardware read 2026-10-09: CTR 0x44570110 ("DW"), UCV "308*".  As plain
+ns16550a the busy-detect interrupt was never acknowledged; stopping the
+serial getty while systemd wrote to the console wedged the CPU at every
+other shutdown until the watchdog reset the NAS.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ arch/arm/boot/dts/mindspeed/comcerto2000.dtsi | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi b/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
+index 6211cbd11..fed88005d 100644
+--- a/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
++++ b/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
+@@ -425,7 +425,17 @@ pfe_ctrl: pfe-ctrl@90500000 {
+ 
+ 		/* ZYXELUNTRASH_RE5_UART_BEGIN */
+ 		uart0: serial@96400000 {
+-			compatible = "mindspeed,comcerto-2000-uart", "ns16550a";
++			/*
++			 * Synopsys DesignWare APB UART (CTR "DW" 0x44570110, UCV
++			 * "308*" read on hardware, 2026-10-09).  Driven as plain
++			 * ns16550a its busy-detect interrupt (IIR 0x7) is never
++			 * acknowledged: an LCR write while the UART is busy (getty
++			 * stop + console output at shutdown) wedged the CPU until
++			 * the watchdog reset.  8250_dw reads USR and retries LCR.
++			 * Needs CONFIG_SERIAL_8250_DW; no ns16550a fallback, so
++			 * of_serial cannot bind first.
++			 */
++			compatible = "snps,dw-apb-uart";
+ 			reg = <0x96400000 0x00001000>;
+ 			interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL_HIGH>;
+ 			no-loopback-test;
+-- 
+2.39.5
+

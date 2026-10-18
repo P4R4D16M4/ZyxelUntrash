@@ -1,0 +1,67 @@
+From 6256d19a459686afe108966c4e5e24aea8a9aead Mon Sep 17 00:00:00 2001
+From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
+Date: Thu, 8 Oct 2026 18:05:15 +0200
+Subject: [PATCH 08/15] V589: pfe .shutdown stops PFE DMA before kexec/reboot
+
+Upstream pfe_ctrl had no shutdown hook; V588 needed rmmod pfe before
+kexec -e.  Disable EGPI1/2, HGPI and HIF RX/TX DMA, then hold the PFE
+AXI reset.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ drivers/pfe_ctrl/pfe_platform.c | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+diff --git a/drivers/pfe_ctrl/pfe_platform.c b/drivers/pfe_ctrl/pfe_platform.c
+index 78f4de0d1..65c4aa6b4 100644
+--- a/drivers/pfe_ctrl/pfe_platform.c
++++ b/drivers/pfe_ctrl/pfe_platform.c
+@@ -24,6 +24,7 @@
+ #include <linux/slab.h>
+ #include <linux/clk.h>
+ #include <linux/reset.h>
++#include <linux/delay.h>
+ 
+ #include "pfe_platform.h"
+ 
+@@ -454,6 +455,29 @@ static struct comcerto_pfe_platform_data comcerto_pfe_pdata = {
+ 	},
+ };
+ 
++/*
++ * ZyxelUntrash V589: stop every PFE DMA master before kexec/reboot/poweroff.
++ * Upstream had no .shutdown; after kexec the PEs and the HIF DMA kept writing
++ * into memory that now belongs to the next kernel (V588 needed rmmod pfe).
++ */
++static void pfe_platform_shutdown(struct platform_device *pdev)
++{
++	struct pfe *pfe = platform_get_drvdata(pdev);
++
++	if (!pfe)
++		return;
++	gpi_disable(EGPI1_BASE_ADDR);
++	gpi_disable(EGPI2_BASE_ADDR);
++	gpi_disable(HGPI_BASE_ADDR);
++	hif_rx_disable();
++	hif_tx_disable();
++	mdelay(2);
++#ifdef CONFIG_OF
++	reset_control_assert(pfe->ctrl.rst_axi);
++#endif
++	pr_info("pfe: shutdown, DMA stopped, PFE AXI held in reset\n");
++}
++
+ static const struct of_device_id of_pfe_platform_match[] = {
+ 	{ .compatible = "fsl,ls1024a-pfe-ctrl", .data = &comcerto_pfe_pdata },
+ 	{},
+@@ -462,6 +486,7 @@ static const struct of_device_id of_pfe_platform_match[] = {
+ static struct platform_driver pfe_platform_driver = {
+ 	.probe = pfe_platform_probe,
+ 	.remove = pfe_platform_remove,
++	.shutdown = pfe_platform_shutdown,
+ 	.driver = {
+ 		.name = "pfe",
+ 		.of_match_table = of_pfe_platform_match,
+-- 
+2.39.5
+

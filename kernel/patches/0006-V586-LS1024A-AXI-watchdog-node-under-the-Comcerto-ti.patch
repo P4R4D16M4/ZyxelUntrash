@@ -1,0 +1,43 @@
+From 2973d595d85885c8b59697ae6f3b417689b7b420 Mon Sep 17 00:00:00 2001
+From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
+Date: Thu, 8 Oct 2026 11:44:25 +0200
+Subject: [PATCH 06/15] V586: LS1024A AXI watchdog node under the Comcerto
+ timer
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ arch/arm/boot/dts/mindspeed/comcerto2000.dtsi | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi b/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
+index d25a4ffa9..6211cbd11 100644
+--- a/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
++++ b/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
+@@ -98,8 +98,11 @@ timer_clk: timer-clock {
+ 	};
+ 
+ 	timer0: timer@90450000 {
+-		compatible = "mindspeed,comcerto-2000-timer";
++		/* V586: also a syscon/simple-mfd parent for the AXI watchdog
++		 * (WDT_HIGH_BOUND/CONTROL/CURRENT_COUNT at +0xd0..+0xd8). */
++		compatible = "mindspeed,comcerto-2000-timer", "syscon", "simple-mfd";
+ 		reg = <0x90450000 0x1000>;
++		resets = <&clkreset LS1024A_AXI_RTC_TIM_RST>;
+ 		interrupts = <0 56 1>;
+ 		clocks = <&timer_clk>;
+ 		clock-names = "timer";
+@@ -110,6 +113,11 @@ timer0: timer@90450000 {
+ 		 * independently validated.
+ 		 */
+ 		status = "okay";
++
++		watchdog: watchdog {
++			compatible = "fsl,ls1024a-wdt";
++			fsl,clkcore = <&clkcore>;
++		};
+ 	};
+ 	/* ZYXELUNTRASH_RE5_V11_TIMER_END */
+ 
+-- 
+2.39.5
+

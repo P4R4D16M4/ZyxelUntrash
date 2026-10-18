@@ -1,0 +1,552 @@
+#!/bin/sh
+# zt-loader -- UntrashOS stage-1 loader (L1, runs from rc.ssh after SSH is up).
+#
+# Finds a system slot, verifies the slot manifest (Ed25519, /etc/untrash/*.pub)
+# and the SHA-256 of every payload it names, then starts the slot kernel with
+# kexec.  The rescue SSH stays reachable the whole time; `touch /tmp/zt-stay`
+# within the grace period keeps the loader in rescue mode.
+#
+# Where slots come from, in this order (V602, installer milestone I2):
+#   1. installer stick (FAT, UNTRASH/INSTALL + UNTRASH/system/slot.utslot)
+#   2. GPT partitions ut-sys-a / ut-sys-b (way A; boot state in ut-bootstate)
+#   3. slot files /.untrash/slot-{a,b}.utslot on a stock volume (ways B/C:
+#      ext4 on md, or on an LVM LV on md; boot state in /.untrash/bootstate)
+#   4. a stick with UNTRASH/system/slot.utslot but no INSTALL marker, when
+#      nothing else is bootable (new NAS)
+# Stock arrays are assembled read-only for the search (os/loader/zt-blk), the
+# filesystems mounted ro,noload: nothing is written to a volume that has no
+# /.untrash/bootstate.  The boot state of a volume is only written when its
+# array is complete (never to a degraded array).
+#
+# Slot formats:
+#   untrash-slot-1  ext4 partition: /untrash/manifest(.sig), /boot/zImage, /boot/dtb
+#   untrash-slot-2  raw (os/image/mkslot-erofs.sh): erofs + verity, kernel, DTB,
+#                   initrd at manifest offsets; manifest + signature in the last
+#                   two 4 KiB blocks of the partition, or of the slot FILE (head
+#                   + trailer, os/install/mk-stick-system.sh).  A file boot needs
+#                   the initrd and uses the manifest's cmdline_file plus
+#                   untrash.src= untrash.file= untrash.slot= (zt-slotinit).
+#
+# Way D (back to stock with stick + browser only), stage 1: a stick with
+# UNTRASH/ROLLBACK (set by the installer) makes the loader check the flash
+# backup of the install run on the stick (device.env hashes), leave a mark in
+# RAM (16 bytes at 0x2e000000) and reset.  The UntrashOS env compares it with
+# Barebox memcmp and skips the loader, so the unchanged stock boot follows;
+# the stock firmware runs the PartnerKey in rollback mode (stage 2: env +
+# kernel<X> back from the backup, os/install/partnerkey/usb_key_func.sh) and
+# powers off.  Linux 6.6 writes no flash here: the SPI env hangs it (V580),
+# the NAND driver is read-only.  A second stage-1 run for the same request
+# means the mark did not work: ROLLBACK_FAILED, normal boot.
+#
+# L2 boot counting ("ZTBS1 pref=a a=3 b=3 good=- booting=-", first 512 bytes
+# of ut-bootstate or of /.untrash/bootstate): the loader tries pref first,
+# then the other slot, skipping slots with no tries left; it decrements the
+# chosen slot and records booting=<slot> before kexec.  The started system
+# runs `untrash-bootstate mark-good` once healthy (tries back to 3, pref/good).
+#   zt-loader             loader run (from rc.ssh)
+#   zt-loader mark-good   system stage: confirm the current slot (partition)
+#   zt-loader state       print the boot state (partition)
+# Test hooks (PC, os/loader/tests/test-zt-loader-host.sh): ZT_LOADER_DRY=1 logs
+# kexec instead of running it, ZT_LOADER_KEYS (key dir), ZT_LOADER_DEVPAT
+# (block device glob, e.g. loop*), ZT_LOADER_BIN (tool dir first in PATH),
+# ZT_LOADER_DEVMEM (file standing in for physical RAM at 0x2e000000).
+PATH=${ZT_LOADER_BIN:+$ZT_LOADER_BIN:}/usr/sbin:/usr/bin:/sbin:/bin
+GRACE=${ZT_LOADER_GRACE:-20}
+KEYS=${ZT_LOADER_KEYS:-/etc/untrash}
+DEVPAT=${ZT_LOADER_DEVPAT:-*}
+MNT=/run/zt-slot
+VOL=/run/zt-vol
+STK=/run/zt-stick
+# A deliberately built diagnostic loader carries this flag in its initramfs.
+# An operator override remains possible for host tests and recovery shells.
+if [ -n "${ZT_LOADER_DIAG+x}" ]; then
+	DIAG=$ZT_LOADER_DIAG
+elif [ -f /etc/zt-loader-diag ]; then
+	DIAG=1
+else
+	DIAG=0
+fi
+DIAGLOG=/tmp/zt-loader-diag.log
+log() {
+	echo "ZT-LOADER:$*" >/dev/kmsg 2>/dev/null
+	echo "ZT-LOADER:$*"
+	[ "$DIAG" = 1 ] && echo "$(date -Is) ZT-LOADER:$*" >>"$DIAGLOG"
+}
+val() { sed -n "s/^$1=//p" "$MNT/untrash/manifest" | head -1; }
+kexec() {
+	if [ "${ZT_LOADER_DRY:-0}" = 1 ]; then echo "zt-kexec $*" >>/tmp/zt-loader-dry.log; return 0; fi
+	zt-kexec "$@"
+}
+
+# umount with retries (a probe that still holds the filesystem gives EBUSY)
+umnt() {
+	for n in 1 2 3 4 5 6; do zt-mount -u "$1" 2>/dev/null && return 0; sleep 1; done
+	log "umount $1 failed"; return 1
+}
+
+TRIES=3
+RBMARK=0x2e000000
+RBWORDS="0x5a54726f 0x6c6c6261 0x636b2d31 0x8f1e2d3c"	# = os/install/envfs.py LOADER
+STAGE=$(cat /proc/device-tree/chosen/untrash,stage 2>/dev/null)
+
+# GPT partition names are exported by the kernel as PARTNAME in the uevent.
+slot_dev() {
+	for u in /sys/class/block/*/uevent; do
+		if grep -q "^PARTNAME=$1\$" "$u"; then
+			echo /dev/$(sed -n 's/^DEVNAME=//p' "$u"); return 0
+		fi
+	done
+	return 1
+}
+
+# Boot state: pref a b good booting (defaults if absent or invalid).
+# BS = partition or file; BSW = 1 if it may be written.
+bs_parse() {	# stdin: the 512-byte record
+	pref=a; ta=$TRIES; tb=$TRIES; good=-; booting=-
+	set -- $(tr -d '\000' | head -1)
+	[ "$1" = ZTBS1 ] || return 0
+	shift
+	for kv in "$@"; do
+		case $kv in
+		pref=a|pref=b) pref=${kv#pref=} ;;
+		a=[0-9]) ta=${kv#a=} ;;
+		b=[0-9]) tb=${kv#b=} ;;
+		good=*) good=${kv#good=} ;;
+		booting=*) booting=${kv#booting=} ;;
+		esac
+	done
+}
+bs_read() {
+	BS=$(slot_dev ut-bootstate) || { BS=; pref=a; ta=$TRIES; tb=$TRIES; good=-; booting=-; return 1; }
+	bs_parse <<EOF
+$(dd if="$BS" bs=512 count=1 2>/dev/null | tr -d '\000')
+EOF
+}
+bs_line() { echo "ZTBS1 pref=$pref a=$ta b=$tb good=$good booting=$booting"; }
+bs_write() {	# $1 = partition or file
+	[ -n "$1" ] || { log "no boot state target, state not saved"; return 1; }
+	line=$(bs_line)
+	{ echo "$line"; dd if=/dev/zero bs=1 count=$((511 - ${#line})) 2>/dev/null; } |
+		dd of="$1" bs=512 count=1 conv=notrunc 2>/dev/null
+	sync
+	log "STATE $line"
+}
+
+case "$1" in
+state)
+	bs_read; echo "dev=${BS:-none} pref=$pref a=$ta b=$tb good=$good booting=$booting"; exit 0 ;;
+mark-good)
+	[ "$STAGE" = system ] || { log "mark-good outside the system stage"; exit 1; }
+	bs_read
+	case $booting in a|b) ;; *) log "mark-good: unknown booting slot '$booting'"; exit 1 ;; esac
+	[ $booting = a ] && ta=$TRIES || tb=$TRIES
+	pref=$booting; good=$booting
+	bs_write "$BS"; exit $? ;;
+esac
+
+# A kernel started by this loader must not run it again.
+if [ "$STAGE" = system ]; then
+	log "STAGE_SYSTEM (started by loader)"
+	exit 0
+fi
+
+log "START V612 grace=${GRACE}s (touch /tmp/zt-stay to stay in rescue)"
+i=0
+while [ $i -lt "$GRACE" ]; do
+	[ -f /tmp/zt-stay ] && { log "STAY requested, rescue mode"; exit 0; }
+	sleep 1; i=$((i+1))
+done
+
+# V602c: md/raid, dm, loop and FAT are modules (/lib/modules/zt), loaded only
+# now, after SSH and the grace period (V578 rule; built in, V602b never came
+# up).  Each insmod is logged first, so a hang names its module.
+for m in md-mod linear raid0 raid1 raid10 async_tx raid6_pq xor async_memcpy async_xor \
+	 async_pq async_raid6_recov libcrc32c raid456 dm-mod loop fat vfat nls_cp437 nls_iso8859-1; do
+	f=/lib/modules/zt/$m.ko
+	[ -f $f ] || continue
+	echo "ZT-LOADER:INSMOD $m" >/dev/kmsg 2>/dev/null
+	insmod $f 2>/dev/null || log "insmod $m failed"
+done
+log "MODULES loaded"
+
+sigok() {	# $1 = manifest, $2 = signature
+	for k in "$KEYS"/*.pub; do
+		zt-sig verify "$k" "$1" "$2" >/dev/null && return 0
+	done
+	return 1
+}
+
+# Format untrash-slot-2 from a partition or a slot file.  Reads the trailer,
+# checks the signature and the payload hashes, loads the kernel with kexec.
+#   try_slot2 NAME SRC KIND [APPEND]
+#   KIND = part (cmdline, @SLOT@ = NAME) | file (cmdline_file + initrd + APPEND)
+# Returns 2 if SRC is not in this format.
+try_slot2() {
+	R=/run/zt-slot2; rm -rf $R; mkdir -p $R
+	if [ "$3" = part ]; then
+		blocks=$(( $(cat /sys/class/block/${2#/dev/}/size) / 8 ))
+	else
+		set -- "$1" "$2" "$3" "$4" $(ls -ln "$2")
+		[ $(( $9 % 4096 )) = 0 ] || { log "SLOT $1 file size not a multiple of 4 KiB"; return 1; }
+		blocks=$(( $9 / 4096 ))
+	fi
+	dd if="$2" bs=4096 skip=$((blocks - 2)) count=1 2>/dev/null | tr -d '\000' >$R/manifest
+	m() { sed -n "s/^$1=//p" $R/manifest | head -1; }
+	[ "$(m format)" = untrash-slot-2 ] || return 2
+	dd if="$2" bs=64 skip=$(( (blocks - 1) * 64 )) count=1 2>/dev/null >$R/manifest.sig
+	sigok $R/manifest $R/manifest.sig || { log "SLOT $1 (slot-2) manifest signature INVALID"; return 1; }
+	for p in kernel dtb initrd; do
+		[ -n "$(m ${p}_off)" ] || continue
+		dd if="$2" of=$R/$p bs=4096 skip=$(( $(m ${p}_off) / 4096 )) count=$(( $(m ${p}_len) / 4096 )) 2>/dev/null
+		[ "$(sha256sum $R/$p | cut -d' ' -f1)" = "$(m ${p}_sha256)" ] ||
+			{ log "SLOT $1 (slot-2) $p hash mismatch"; return 1; }
+	done
+	if [ "$3" = part ]; then
+		cmd=$(m cmdline | sed "s/@SLOT@/$1/g")
+		log "SLOT $1 $2 version=$(m version) verity=$(m verity_root | cut -c1-16) verified, kexec load"
+		kexec -l $R/kernel --dtb=$R/dtb --command-line="$cmd" || { log "SLOT $1 kexec load failed"; return 1; }
+	else
+		[ -f $R/initrd ] && [ -n "$(m cmdline_file)" ] ||
+			{ log "SLOT $1 (slot-2) has no initrd/cmdline_file, cannot boot from a file"; return 1; }
+		cmd="$(m cmdline_file) $4"
+		log "SLOT $1 $2 version=$(m version) verity=$(m verity_root | cut -c1-16) verified, kexec load (file)"
+		# V602e: kexec placement (kernel/initrd/DTB) into the kernel log
+		kexec -d -l $R/kernel --dtb=$R/dtb --initrd=$R/initrd --command-line="$cmd" >/tmp/zt-kexec.log 2>&1 ||
+			{ log "SLOT $1 kexec load failed"; tail -5 /tmp/zt-kexec.log; return 1; }
+		grep -E "initrd|segment|Resulting|kernel|dtb" /tmp/zt-kexec.log | head -24 |
+			while read -r l; do log "KEXECDBG $l"; done
+	fi
+	return 0
+}
+
+try_slot() {	# $1 = slot name (partition)
+	dev=$(slot_dev "$1") || { log "SLOT $1 absent"; return 1; }
+	try_slot2 "$1" "$dev" part; r=$?
+	[ $r = 2 ] || return $r
+	mkdir -p $MNT
+	zt-mount ext4 "$dev" $MNT ro || { log "SLOT $1 $dev mount failed"; return 1; }
+	ok=0
+	if [ "$(val format)" != untrash-slot-1 ]; then
+		log "SLOT $1 unknown format"
+	else
+		sigok $MNT/untrash/manifest $MNT/untrash/manifest.sig && ok=1 || log "SLOT $1 manifest signature INVALID"
+	fi
+	if [ $ok = 1 ]; then
+		K=$MNT/$(val kernel); D=$MNT/$(val dtb)
+		if [ "$(sha256sum "$K" | cut -d' ' -f1)" != "$(val kernel_sha256)" ] ||
+		   [ "$(sha256sum "$D" | cut -d' ' -f1)" != "$(val dtb_sha256)" ]; then
+			log "SLOT $1 payload hash mismatch"; ok=0
+		fi
+	fi
+	if [ $ok = 1 ]; then
+		log "SLOT $1 $dev version=$(val version) verified, kexec load"
+		kexec -l "$K" --dtb="$D" || { log "SLOT $1 kexec load failed"; ok=0; }
+	fi
+	umnt $MNT
+	[ $ok = 1 ]
+}
+
+go() {	# $1 = what is started; kexec loaded
+	[ -f /tmp/zt-stay ] && { log "STAY requested, not executing"; exit 0; }
+	log "KEXEC $1"
+	sync
+	if [ "${ZT_LOADER_DRY:-0}" = 1 ]; then echo "zt-kexec -e ($1)" >>/tmp/zt-loader-dry.log; exit 0; fi
+	zt-kexec -e		# device_shutdown stops PFE DMA (pfe .shutdown, V589)
+	log "KEXEC returned"
+	exit 1
+}
+
+# ------------------------------------------------- way D, stage 1 (stick)
+mem() {	# mem ADDR [VALUE]: 32-bit read/write of physical RAM
+	if [ -n "$ZT_LOADER_DEVMEM" ]; then
+		rb_o=$(( $1 - RBMARK ))
+		if [ -n "$2" ]; then printf '%08x\n' $(($2)) | dd of="$ZT_LOADER_DEVMEM" bs=9 seek=$((rb_o / 4)) conv=notrunc 2>/dev/null
+		else rb_v=$(dd if="$ZT_LOADER_DEVMEM" bs=9 skip=$((rb_o / 4)) count=1 2>/dev/null); echo 0x${rb_v:-00000000}; fi
+		return 0
+	fi
+	if [ -n "$2" ]; then devmem $1 32 $2; else devmem $1 32; fi
+}
+mark_present() {
+	rb_a=$((RBMARK))
+	for rb_w in $RBWORDS; do [ $(( $(mem $rb_a) )) = $((rb_w)) ] || return 1; rb_a=$((rb_a + 4)); done
+	return 0
+}
+stick_note() {	# $1 = stick device, $2 = file under UNTRASH/, $3 = text (appended)
+zt-mount vfat "$1" $STK 2>/dev/null || { log "stick not writable, note lost: $3"; return 1; }
+	echo "$3" >>$STK/UNTRASH/$2
+	sync; umnt $STK
+}
+# $1 = stick device, mounted ro at $STK.  Returns only when nothing was done.
+rollback_stage1() {
+	src=
+	for rb_d in $(ls -d $STK/UNTRASH/install-* 2>/dev/null); do
+		[ -f $rb_d/device.env ] && grep -q 'RESULT DONE' $rb_d/install.log 2>/dev/null && src=$rb_d
+	done
+	[ -n "$src" ] || { log "ROLLBACK: no completed install run on the stick, ignored"; return 1; }
+	dv() { sed -n "s/^$1=//p" $src/device.env | head -1; }
+	X=$(dv LOADER_SLOT); XM=$(dv LOADER_MTD)
+	case $X in 1|2) ;; *) log "ROLLBACK: bad LOADER_SLOT '$X'"; return 1 ;; esac
+	if [ "$(sha256sum $src/mtd2-before-a.bin | cut -d' ' -f1)" != "$(dv ENV_OLD_SHA256)" ] ||
+	   [ "$(sha256sum $src/mtd$XM-before-a.bin | cut -d' ' -f1)" != "$(dv KX_OLD_SHA256)" ]; then
+		umnt $STK
+		stick_note "$1" ROLLBACK_FAILED "backup of ${src##*/} does not verify (loader), nothing done"
+		log "ROLLBACK: backup of ${src##*/} does not verify"; return 1
+	fi
+	prev=$(grep -c '^stage1 ' $STK/UNTRASH/rollback-stage1.log 2>/dev/null)
+	umnt $STK
+	if [ "${prev:-0}" -gt 0 ]; then
+		if mark_present; then why="the RAM mark survived the reset, but Barebox still started the loader (env without way D?)"
+		else why="the RAM mark did not survive the reset"; fi
+		mem $RBMARK 0
+		log "ROLLBACK stage 1 FAILED: $why"
+		stick_note "$1" rollback-stage1.log "failed: $why"
+		stick_note "$1" ROLLBACK_FAILED "loader stage 1: $why"
+		return 1
+	fi
+	log "ROLLBACK stage 1: backup ${src##*/} verified, RAM mark for Barebox, reset to the stock firmware"
+	stick_note "$1" rollback-stage1.log "stage1 $(date +%Y%m%d-%H%M%S) source=${src##*/} loader_slot=$X"
+	rb_a=$((RBMARK))
+	for rb_w in $RBWORDS; do mem $rb_a $rb_w; rb_a=$((rb_a + 4)); done
+	mark_present || { log "ROLLBACK: RAM mark does not read back"; return 1; }
+	sync
+	if [ "${ZT_LOADER_DRY:-0}" = 1 ]; then echo "reboot -f (rollback)" >>/tmp/zt-loader-dry.log; exit 0; fi
+	reboot -f
+	exit 1
+}
+
+# ------------------------------------------------------------------ stick
+# FAT partitions (USB stick); sets STICK_DEV/STICK_UUID/STICK_INSTALL and
+# leaves the stick mounted ro at $STK when it carries a system slot.
+find_stick() {
+	STICK_DEV=; STICK_UUID=; STICK_INSTALL=0
+	mkdir -p $STK
+	for b in /sys/class/block/$DEVPAT; do
+		[ -e "$b" ] || continue
+		d=/dev/${b##*/}
+		t=$(zt-blk probe "$d" 2>/dev/null) || continue
+		case $t in *TYPE=vfat*) ;; *) continue ;; esac
+		zt-mount vfat "$d" $STK ro 2>/dev/null || continue
+		if [ -f $STK/UNTRASH/ROLLBACK ] && [ ! -e $STK/UNTRASH/ROLLBACK_DONE ] && [ ! -e $STK/UNTRASH/ROLLBACK_FAILED ]; then
+			log "STICK $d requests the way back to stock (UNTRASH/ROLLBACK)"
+			rollback_stage1 "$d"
+			zt-mount vfat "$d" $STK ro 2>/tmp/zt-mount.err ||
+				{ log "STICK $d remount failed: $(cat /tmp/zt-mount.err)"; continue; }
+		fi
+		if [ -f $STK/UNTRASH/system/slot.utslot ]; then
+			STICK_DEV=$d
+			STICK_UUID=$(echo "$t" | sed -n 's/^UUID=//p')
+			[ -f $STK/UNTRASH/INSTALL ] && STICK_INSTALL=1
+			log "STICK $d uuid=$STICK_UUID install=$STICK_INSTALL version=$(cat $STK/UNTRASH/system/version 2>/dev/null)"
+			return 0
+		fi
+		umnt $STK
+	done
+	return 1
+}
+boot_stick() {
+	if try_slot2 stick $STK/UNTRASH/system/slot.utslot file \
+		"untrash.src=vfat:$STICK_UUID untrash.file=/UNTRASH/system/slot.utslot untrash.slot=stick untrash.installer=1"; then
+		umnt $STK
+		go "installer from stick $STICK_DEV"
+	fi
+	umnt $STK
+	return 1
+}
+
+# ---------------------------------------------------------- stock volumes
+# md arrays are assembled read-only as md110.. (zt-blk md-assemble); every
+# ext4 candidate (on md or on a linear LV) is mounted ro,noload and checked
+# for /.untrash/bootstate.  Found: VOL_SRC (untrash.src=), VOL_DEV, VOL_MD,
+# VOL_DM, VOL_DEGRADED, mounted at $VOL.  Everything else is torn down again.
+MDN=110
+md_scan() {	# zt-blk md-scan, limited to $DEVPAT
+	zt-blk md-scan 2>/dev/null | while read -r l; do
+		d=${l#MD dev=/dev/}; d=${d%% *}
+		case $d in $DEVPAT) echo "$l" ;; esac
+	done
+}
+retry() {	# command, up to 6 tries 1 s apart (a short-lived opener gives EBUSY)
+	for t in 1 2 3 4 5 6; do "$@" 2>/dev/null && return 0; sleep 1; done
+	log "FAILED: $*"; return 1
+}
+vol_teardown() {	# $1 = md name, rest = dm names
+	md=$1; shift
+	for n in "$@"; do retry zt-blk dm-remove "$n"; done
+	retry zt-blk md-stop "$md"
+}
+check_vol() {	# $1 = dev, $2 = src; 0 = UntrashOS found (left mounted)
+	case $(zt-blk probe "$1" 2>/dev/null) in *TYPE=ext4*) ;; *) return 1 ;; esac
+	mkdir -p $VOL
+	zt-mount ext4 "$1" $VOL ro,noload 2>/dev/null || { log "VOL $1 mount failed"; return 1; }
+	if [ -f $VOL/.untrash/bootstate ]; then
+		log "VOL $1 ($2) has /.untrash"
+		VOL_SRC=$2; VOL_DEV=$1; return 0
+	fi
+	umnt $VOL
+	return 1
+}
+find_volume() {
+	VOL_SRC=; VOL_DEV=; VOL_MD=; VOL_DM=; VOL_DEGRADED=0
+	md_scan >/tmp/zt-md.scan
+	for u in $(sed -n 's/.* uuid=\([0-9a-f]*\) .*/\1/p' /tmp/zt-md.scan | sort -u); do
+		devs=$(grep " uuid=$u " /tmp/zt-md.scan | sed 's/^MD dev=\([^ ]*\) .*/\1/')
+		n=$(echo $devs | wc -w)
+		want=$(grep -m1 " uuid=$u " /tmp/zt-md.scan | sed 's/.* disks=\([0-9]*\) .*/\1/')
+		md=md$MDN; MDN=$((MDN + 1))
+		mdev=$(zt-blk md-assemble $md readonly $devs 2>/dev/null) || { log "MD $u ($n/$want) not assembled"; continue; }
+		deg=0; [ "$n" -lt "$want" ] && deg=1
+		if check_vol "$mdev" "md:$u"; then VOL_MD=$md; VOL_DEGRADED=$deg; return 0; fi
+		dms=
+		case $(zt-blk probe "$mdev" 2>/dev/null) in
+		*TYPE=LVM2_member*)
+			zt-blk lvm-scan "$mdev" 2>/dev/null | grep -v unsupported= >/tmp/zt-lv.scan
+			while read -r l; do
+				vg=$(echo "$l" | sed 's/.* vg=\([^ ]*\) .*/\1/'); lv=$(echo "$l" | sed 's/.* lv=\([^ ]*\) .*/\1/')
+				name=$(echo "$l" | sed 's/.* name=\([^ ]*\) .*/\1/'); uuid=$(echo "$l" | sed 's/.* uuid=\([^ ]*\) .*/\1/')
+				table=$(echo "$l" | sed 's/.* table=//')
+				dev=$(zt-blk dm-create "$name" "$uuid" ro "$table" 2>/dev/null) || continue
+				dms="$dms $name"
+				if check_vol "$dev" "lv:$u:$vg/$lv"; then
+					VOL_MD=$md; VOL_DM=$name; VOL_DEGRADED=$deg
+					for o in $dms; do [ $o = $name ] || retry zt-blk dm-remove $o; done
+					VOL_TABLE=$table; VOL_UUID=$uuid
+					return 0
+				fi
+			done </tmp/zt-lv.scan ;;
+		esac
+		vol_teardown $md $dms
+	done
+	return 1
+}
+# Write the boot state file on the found volume: tear the read-only set-up
+# down and bring the same array/LV up writable (read-auto), only if complete.
+vol_bs_write() {
+	umnt $VOL
+	if [ "$VOL_DEGRADED" = 1 ]; then
+		log "VOL array degraded, boot state NOT written"
+		vol_teardown $VOL_MD $VOL_DM; return 1
+	fi
+	u=$(echo "$VOL_SRC" | cut -d: -f2)
+	devs=$(grep " uuid=$u " /tmp/zt-md.scan | sed 's/^MD dev=\([^ ]*\) .*/\1/')
+	vol_teardown $VOL_MD $VOL_DM
+	mdev=$(zt-blk md-assemble $VOL_MD read-auto $devs) || { log "VOL md rw assemble failed"; return 1; }
+	dev=$mdev
+	if [ -n "$VOL_DM" ]; then
+		dev=$(zt-blk dm-create "$VOL_DM" "$VOL_UUID" rw "$VOL_TABLE") || { vol_teardown $VOL_MD; return 1; }
+	fi
+	r=1
+	if zt-mount ext4 "$dev" $VOL; then
+		bs_write $VOL/.untrash/bootstate && r=0
+		umnt $VOL
+	else
+		log "VOL rw mount failed"
+	fi
+	vol_teardown $VOL_MD $VOL_DM
+	return $r
+}
+boot_volume() {
+	bs_parse <$VOL/.untrash/bootstate
+	log "STATE pref=$pref a=$ta b=$tb good=$good booting=$booting (/.untrash/bootstate on $VOL_DEV)"
+	[ $pref = a ] && order="a b" || order="b a"
+	for x in $order; do
+		[ $x = a ] && t=$ta || t=$tb
+		[ "$t" -gt 0 ] || { log "SLOT file $x no tries left, skipped"; continue; }
+		f=/.untrash/slot-$x.utslot
+		[ -f $VOL$f ] || { log "SLOT file $x absent"; continue; }
+		if try_slot2 "file-$x" $VOL$f file "untrash.src=$VOL_SRC untrash.file=$f untrash.slot=$x"; then
+			[ $x = a ] && ta=$((ta - 1)) || tb=$((tb - 1))
+			booting=$x
+			vol_bs_write
+			go "slot file $x on $VOL_SRC (tries left $([ $x = a ] && echo $ta || echo $tb))"
+		fi
+	done
+	umnt $VOL; vol_teardown $VOL_MD $VOL_DM
+	return 1
+}
+
+# --------------------------------------------------------------------- main
+# Disks spin up after rc.ssh powers the bays (staggered, ~12 s) and AHCI loads:
+# wait for slot partitions, or until the md members seen stay the same for 5 s
+# and no array misses a member.
+# md arrays seen with fewer members than they have disks (uuid lines)
+md_incomplete() {
+	md_scan >/tmp/zt-md.wait
+	for u in $(sed -n 's/.* uuid=\([0-9a-f]*\) .*/\1/p' /tmp/zt-md.wait | sort -u); do
+		n=$(grep -c " uuid=$u " /tmp/zt-md.wait)
+		want=$(grep -m1 " uuid=$u " /tmp/zt-md.wait | sed 's/.* disks=\([0-9]*\) .*/\1/')
+		[ "$n" -lt "$want" ] && echo "$u $n/$want"
+	done
+	return 0	# the output says it, not the status (the last test may be false)
+}
+i=0; last=; same=0
+while [ $i -lt "${ZT_LOADER_DISKWAIT:-40}" ]; do
+	slot_dev ut-sys-a >/dev/null || slot_dev ut-sys-b >/dev/null && break
+	now=$(md_scan | wc -l)
+	if [ "$now" -gt 0 ] && [ "$now" = "$last" ]; then
+		same=$((same + 1)); [ $same -ge 5 ] && [ -z "$(md_incomplete)" ] && break
+	else same=0; fi
+	last=$now; sleep 1; i=$((i+1))
+done
+# 2026-10-17: after a watchdog (warm) reset the bay-1 disk was not ready in
+# time (ata1 link down after 22 s), the linear stock array stayed at 3/4 and
+# the loader fell back to the stick installer / rescue without network.  A
+# missing member: re-probe every SATA/SCSI port (libata: link reset) and wait
+# again, up to $MDROUNDS x $MDWAIT s; then go on as before (a disk that is
+# really gone must not keep the NAS from booting a degraded raid1).
+SCSI=${ZT_LOADER_SCSI:-/sys/class/scsi_host}
+MDROUNDS=${ZT_LOADER_MDROUNDS:-6}; MDWAIT=${ZT_LOADER_MDWAIT:-30}
+if ! { slot_dev ut-sys-a >/dev/null || slot_dev ut-sys-b >/dev/null; }; then
+	r=0
+	while miss=$(md_incomplete); [ -n "$miss" ] && [ $r -lt "$MDROUNDS" ]; do
+		r=$((r + 1))
+		log "MD incomplete ($(echo $miss)): rescan $r/$MDROUNDS"
+		for h in "$SCSI"/*/scan; do [ -e "$h" ] && echo "- - -" >"$h" 2>/dev/null; done
+		w=0
+		while [ $w -lt "$MDWAIT" ]; do
+			sleep 2; w=$((w + 2))
+			[ -z "$(md_incomplete)" ] && break
+		done
+	done
+	[ $r -gt 0 ] && log "MD after rescan: $([ -z "$(md_incomplete)" ] && echo complete || echo "still incomplete ($(echo $(md_incomplete)))")"
+fi
+
+if find_stick; then
+	[ $STICK_INSTALL = 1 ] && { log "STICK requests the installer (UNTRASH/INSTALL)"; boot_stick; }
+	umnt $STK
+fi
+
+bs_read
+if slot_dev ut-sys-a >/dev/null || slot_dev ut-sys-b >/dev/null; then
+	log "STATE pref=$pref a=$ta b=$tb good=$good booting=$booting (${BS:-no ut-bootstate})"
+	[ $pref = a ] && order="a b" || order="b a"
+	for x in $order; do
+		[ $x = a ] && t=$ta || t=$tb
+		[ "$t" -gt 0 ] || { log "SLOT ut-sys-$x no tries left, skipped"; continue; }
+		if try_slot ut-sys-$x; then
+			[ $x = a ] && ta=$((ta - 1)) || tb=$((tb - 1))
+			booting=$x
+			bs_write "$BS"
+			go "slot ut-sys-$x (tries left $([ $x = a ] && echo $ta || echo $tb))"
+		fi
+	done
+fi
+
+if find_volume; then
+	boot_volume
+fi
+
+if [ -n "$STICK_DEV" ] && zt-mount vfat "$STICK_DEV" $STK ro 2>/dev/null; then
+	if [ "$DIAG" = 1 ]; then
+		umnt $STK
+		if zt-mount vfat "$STICK_DEV" $STK 2>/dev/null; then
+			cp "$DIAGLOG" "$STK/UNTRASH/loader-diag.log" 2>/dev/null || true
+			sync
+			umnt $STK
+			zt-mount vfat "$STICK_DEV" $STK ro 2>/dev/null || true
+		fi
+	fi
+	log "nothing else bootable: installer from the stick"
+	boot_stick
+fi
+log "NO_BOOTABLE_SLOT, rescue mode"
+exit 1

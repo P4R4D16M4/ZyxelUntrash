@@ -1,0 +1,127 @@
+From 32f55fd15d777f620dd58fb51587f1d3db897022 Mon Sep 17 00:00:00 2001
+From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
+Date: Sun, 18 Oct 2026 20:02:11 +0200
+Subject: [PATCH 14/15] V600i: rtc-ht1382 wake alarm (stock rtcAccess
+ registers, no IRQ)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ drivers/rtc/rtc-ht1382.c | 78 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 78 insertions(+)
+
+diff --git a/drivers/rtc/rtc-ht1382.c b/drivers/rtc/rtc-ht1382.c
+index 23e2e600e..6a38f20c2 100644
+--- a/drivers/rtc/rtc-ht1382.c
++++ b/drivers/rtc/rtc-ht1382.c
+@@ -11,6 +11,13 @@
+  *   0x02 hours   (BCD, bit 7 = 24 h mode)    0x06 year (BCD, 2000-2099)
+  *   0x03 date    (BCD 1-31)                  0x07 bit 7 = write protect
+  *
++ * Alarm (stock rtcAccess "yyyy-mm-dd hh:mm:ss" / "disable" / "clearAF",
++ * disassembled 2026-10-10): 0x0b minute, 0x0c hour, 0x0d date, BCD, bit 7 =
++ * match this field; reading 0x08 clears the alarm flag; stock "init" writes
++ * 0x07 = 0x00, 0x08 = 0x80, 0x09 = 0xc0.  The alarm output is not wired to
++ * the SoC: the board MCU powers the NAS on (scheduled power-on), so the
++ * driver offers it as a wake alarm without interrupt (sysfs wakealarm).
++ *
+  * Driven by rtc-ds1307 the date, month and weekday registers were shifted
+  * by one (October was read back as July).  Only single-byte SMBus transfers
+  * are used, exactly like the stock tool.
+@@ -30,6 +37,12 @@
+ #define HT1382_WDAY	0x05
+ #define HT1382_YEAR	0x06
+ #define HT1382_WP	0x07
++#define HT1382_CTRL	0x08
++#define HT1382_CTRL2	0x09
++#define HT1382_AMIN	0x0b
++#define HT1382_AHOUR	0x0c
++#define HT1382_ADATE	0x0d
++#define HT1382_AE	BIT(7)
+ 
+ #define HT1382_SEC_CH	BIT(7)
+ #define HT1382_HOUR_24	BIT(7)
+@@ -121,9 +134,70 @@ static int ht1382_set_time(struct device *dev, struct rtc_time *tm)
+ 	return 0;
+ }
+ 
++static int ht1382_read_alarm(struct device *dev, struct rtc_wkalrm *alrm)
++{
++	struct i2c_client *client = to_i2c_client(dev);
++	int min, hour, date;
++
++	min = i2c_smbus_read_byte_data(client, HT1382_AMIN);
++	hour = i2c_smbus_read_byte_data(client, HT1382_AHOUR);
++	date = i2c_smbus_read_byte_data(client, HT1382_ADATE);
++	if (min < 0 || hour < 0 || date < 0)
++		return -EIO;
++
++	/* month and year are not compared: the rtc core fills them in */
++	alrm->time.tm_sec = 0;
++	alrm->time.tm_min = bcd2bin(min & 0x7f);
++	alrm->time.tm_hour = bcd2bin(hour & 0x3f);
++	alrm->time.tm_mday = bcd2bin(date & 0x3f);
++	alrm->time.tm_mon = -1;
++	alrm->time.tm_year = -1;
++	alrm->time.tm_wday = -1;
++	alrm->time.tm_yday = -1;
++	alrm->time.tm_isdst = -1;
++	alrm->enabled = (min & HT1382_AE) && (hour & HT1382_AE) && (date & HT1382_AE);
++	return 0;
++}
++
++static int ht1382_set_alarm(struct device *dev, struct rtc_wkalrm *alrm)
++{
++	struct i2c_client *client = to_i2c_client(dev);
++	u8 ae = alrm->enabled ? HT1382_AE : 0;
++	int ret;
++
++	if (alrm->enabled) {
++		/* stock "init": write protect off, alarm control as stock */
++		ret = i2c_smbus_write_byte_data(client, HT1382_WP, 0x00);
++		if (!ret)
++			ret = i2c_smbus_write_byte_data(client, HT1382_CTRL, 0x80);
++		if (!ret)
++			ret = i2c_smbus_write_byte_data(client, HT1382_CTRL2, 0xc0);
++		if (ret)
++			return ret;
++	}
++	ret = i2c_smbus_write_byte_data(client, HT1382_AMIN, bin2bcd(alrm->time.tm_min) | ae);
++	if (!ret)
++		ret = i2c_smbus_write_byte_data(client, HT1382_AHOUR, bin2bcd(alrm->time.tm_hour) | ae);
++	if (!ret)
++		ret = i2c_smbus_write_byte_data(client, HT1382_ADATE, bin2bcd(alrm->time.tm_mday) | ae);
++	if (ret)
++		return ret;
++	/* reading the control register clears a pending alarm flag (stock clearAF) */
++	ret = i2c_smbus_read_byte_data(client, HT1382_CTRL);
++	return ret < 0 ? ret : 0;
++}
++
++static int ht1382_alarm_irq_enable(struct device *dev, unsigned int enabled)
++{
++	return 0;	/* no interrupt line to the SoC; the alarm wakes the board via the MCU */
++}
++
+ static const struct rtc_class_ops ht1382_rtc_ops = {
+ 	.read_time	= ht1382_read_time,
+ 	.set_time	= ht1382_set_time,
++	.read_alarm	= ht1382_read_alarm,
++	.set_alarm	= ht1382_set_alarm,
++	.alarm_irq_enable = ht1382_alarm_irq_enable,
+ };
+ 
+ static int ht1382_probe(struct i2c_client *client)
+@@ -138,6 +212,10 @@ static int ht1382_probe(struct i2c_client *client)
+ 		return PTR_ERR(rtc);
+ 
+ 	rtc->ops = &ht1382_rtc_ops;
++	/* scheduled power-on: /sys/class/rtc/rtc0/wakealarm needs a wakeup-capable device */
++	device_init_wakeup(&client->dev, true);
++	clear_bit(RTC_FEATURE_UPDATE_INTERRUPT, rtc->features);
++	set_bit(RTC_FEATURE_ALARM_RES_MINUTE, rtc->features);
+ 	rtc->range_min = RTC_TIMESTAMP_BEGIN_2000;
+ 	rtc->range_max = RTC_TIMESTAMP_END_2099;
+ 
+-- 
+2.39.5
+

@@ -1,0 +1,6 @@
+[Unit]
+Description=UntrashOS: scheduled power-off / reboot
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/untrash/untrash-power tick

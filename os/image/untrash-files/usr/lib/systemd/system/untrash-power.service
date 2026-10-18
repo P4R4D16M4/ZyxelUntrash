@@ -1,0 +1,15 @@
+[Unit]
+Description=UntrashOS: power-loss behaviour, Wake-on-LAN and scheduled power-on (board MCU, RTC alarm)
+ConditionKernelCommandLine=!untrash.installer=1
+After=systemd-modules-load.service untrash-rtc.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/bin/sh -c 'modprobe i2c-dev 2>/dev/null; for i in $(seq 40); do [ -e /dev/i2c-0 ] && exit 0; sleep 0.5; done; exit 1'
+ExecStart=/usr/lib/untrash/untrash-power boot
+# runs while shutting down: "former" mode and the next scheduled power-on
+ExecStop=/usr/lib/untrash/untrash-power shutdown
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,218 @@
+From ab0282cd10f2b30adead5b965c1fa36fc7d28f34 Mon Sep 17 00:00:00 2001
+From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
+Date: Sun, 18 Oct 2026 20:02:11 +0200
+Subject: [PATCH 13/15] V600h: NAS542 passive buzzer on PWM5 (misc driver,
+ sysfs play)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ drivers/misc/Kconfig         |  10 +++
+ drivers/misc/Makefile        |   1 +
+ drivers/misc/nas542-buzzer.c | 162 +++++++++++++++++++++++++++++++++++
+ 3 files changed, 173 insertions(+)
+ create mode 100644 drivers/misc/nas542-buzzer.c
+
+diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
+index cadd4a820..c0c0ca0e2 100644
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -5,6 +5,16 @@
+ 
+ menu "Misc devices"
+ 
++config NAS542_BUZZER
++	bool "Zyxel NAS542 PWM5 buzzer"
++	depends on OF && HAS_IOMEM
++	help
++	  Drive the passive buzzer fitted to the Zyxel NAS542.  The stock
++	  firmware enables PWM5 at 0x90458030 and generates tones by toggling
++	  bits 0xb000 of the PWM5 output register at 0x90458034.  This driver
++	  exposes a deliberately small interface, `tone', accepting a frequency
++	  in Hz (0 stops it); only the board DTS may instantiate it.
++
+ config SENSORS_LIS3LV02D
+ 	tristate
+ 	depends on INPUT
+diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
+index f2a4d1ff6..ffc56aa5b 100644
+--- a/drivers/misc/Makefile
++++ b/drivers/misc/Makefile
+@@ -8,6 +8,7 @@ obj-$(CONFIG_IBMVMC)		+= ibmvmc.o
+ obj-$(CONFIG_AD525X_DPOT)	+= ad525x_dpot.o
+ obj-$(CONFIG_AD525X_DPOT_I2C)	+= ad525x_dpot-i2c.o
+ obj-$(CONFIG_AD525X_DPOT_SPI)	+= ad525x_dpot-spi.o
++obj-$(CONFIG_NAS542_BUZZER)	+= nas542-buzzer.o
+ obj-$(CONFIG_ATMEL_SSC)		+= atmel-ssc.o
+ obj-$(CONFIG_DUMMY_IRQ)		+= dummy-irq.o
+ obj-$(CONFIG_ICS932S401)	+= ics932s401.o
+diff --git a/drivers/misc/nas542-buzzer.c b/drivers/misc/nas542-buzzer.c
+new file mode 100644
+index 000000000..4763c03bd
+--- /dev/null
++++ b/drivers/misc/nas542-buzzer.c
+@@ -0,0 +1,162 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Passive PWM5 buzzer on the Zyxel NAS542.
++ *
++ * Evidence: stock Linux 3.2 set_buzzer()/buzzer_timer_func() and the V582
++ * board inventory.  PWM5 control is +0x30; its output latch is +0x34.
++ * Stock enables 0x80010000 in the control word, toggles only 0xb000 in the
++ * latch every 500 us for its 1 kHz beep, and clears those bits to stop.
++ */
++#include <linux/bitops.h>
++#include <linux/delay.h>
++#include <linux/io.h>
++#include <linux/kernel.h>
++#include <linux/math64.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++
++#define NAS542_PWM5_CTRL	0x30
++#define NAS542_PWM5_OUT	0x34
++#define NAS542_PWM5_ENABLE	0x80010000
++#define NAS542_BUZZER_MASK	0x0000b000
++#define NAS542_MIN_HZ		100
++#define NAS542_MAX_HZ		4000
++#define NAS542_MAX_NOTE_MS	1000
++
++struct nas542_buzzer {
++	void __iomem *base;
++	struct mutex lock;
++	unsigned int frequency;
++};
++
++static void nas542_buzzer_off(struct nas542_buzzer *b)
++{
++	u32 v = readl_relaxed(b->base + NAS542_PWM5_OUT);
++
++	writel_relaxed(v & ~NAS542_BUZZER_MASK, b->base + NAS542_PWM5_OUT);
++}
++
++/*
++ * CONFIG_HZ=100 and no high-resolution timers means that hrtimer callbacks
++ * are quantised to 10 ms and cannot make an audible 100..4000 Hz waveform.
++ * The vendor driver used bounded udelay(500) toggles for this output.  Keep
++ * that established hardware contract, with IRQs enabled and one CPU occupied
++ * only for one bounded note.
++ */
++static int nas542_buzzer_play(struct nas542_buzzer *b, unsigned int hz,
++			      unsigned int duration_ms)
++{
++	u64 cycles;
++	u64 i;
++	unsigned int half_us;
++	u32 v;
++
++	if (hz && (hz < NAS542_MIN_HZ || hz > NAS542_MAX_HZ))
++		return -ERANGE;
++	if (duration_ms > NAS542_MAX_NOTE_MS)
++		return -ERANGE;
++
++	mutex_lock(&b->lock);
++	WRITE_ONCE(b->frequency, 0);
++	nas542_buzzer_off(b);
++	if (hz && duration_ms) {
++		cycles = DIV_ROUND_CLOSEST_ULL((u64)hz * duration_ms, 1000);
++		half_us = DIV_ROUND_CLOSEST(USEC_PER_SEC, 2 * hz);
++		WRITE_ONCE(b->frequency, hz);
++		for (i = 0; i < cycles; i++) {
++			v = readl_relaxed(b->base + NAS542_PWM5_OUT);
++			writel_relaxed(v | NAS542_BUZZER_MASK,
++				       b->base + NAS542_PWM5_OUT);
++			udelay(half_us);
++			writel_relaxed(v & ~NAS542_BUZZER_MASK,
++				       b->base + NAS542_PWM5_OUT);
++			udelay(half_us);
++		}
++	}
++	WRITE_ONCE(b->frequency, 0);
++	nas542_buzzer_off(b);
++	mutex_unlock(&b->lock);
++	return 0;
++}
++
++static ssize_t tone_show(struct device *dev, struct device_attribute *attr, char *buf)
++{
++	struct nas542_buzzer *b = dev_get_drvdata(dev);
++
++	return sysfs_emit(buf, "%u\\n", READ_ONCE(b->frequency));
++}
++
++static ssize_t play_store(struct device *dev, struct device_attribute *attr,
++				 const char *buf, size_t count)
++{
++	struct nas542_buzzer *b = dev_get_drvdata(dev);
++	unsigned int hz, duration_ms;
++	int ret;
++
++	if (sscanf(buf, "%u %u", &hz, &duration_ms) != 2)
++		return -EINVAL;
++	ret = nas542_buzzer_play(b, hz, duration_ms);
++	return ret ? ret : count;
++}
++static DEVICE_ATTR_RO(tone);
++static DEVICE_ATTR_WO(play);
++
++static int nas542_buzzer_probe(struct platform_device *pdev)
++{
++	struct nas542_buzzer *b;
++	struct resource *res;
++	u32 v;
++	int ret;
++
++	b = devm_kzalloc(&pdev->dev, sizeof(*b), GFP_KERNEL);
++	if (!b)
++		return -ENOMEM;
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	b->base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(b->base))
++		return PTR_ERR(b->base);
++	mutex_init(&b->lock);
++	/* Exact enable bits observed in stock gpio_init; preserve all others. */
++	v = readl_relaxed(b->base + NAS542_PWM5_CTRL);
++	writel_relaxed(v | NAS542_PWM5_ENABLE, b->base + NAS542_PWM5_CTRL);
++	nas542_buzzer_off(b);
++	platform_set_drvdata(pdev, b);
++	ret = device_create_file(&pdev->dev, &dev_attr_tone);
++	if (ret)
++		return ret;
++	ret = device_create_file(&pdev->dev, &dev_attr_play);
++	if (ret) {
++		device_remove_file(&pdev->dev, &dev_attr_tone);
++		return ret;
++	}
++	dev_info(&pdev->dev, "PWM5 passive buzzer ready (play: %u..%u Hz, <=%u ms)\\n",
++		 NAS542_MIN_HZ, NAS542_MAX_HZ, NAS542_MAX_NOTE_MS);
++	return 0;
++}
++
++static void nas542_buzzer_remove(struct platform_device *pdev)
++{
++	struct nas542_buzzer *b = platform_get_drvdata(pdev);
++
++	device_remove_file(&pdev->dev, &dev_attr_play);
++	device_remove_file(&pdev->dev, &dev_attr_tone);
++	nas542_buzzer_play(b, 0, 0);
++}
++
++static const struct of_device_id nas542_buzzer_of_match[] = {
++	{ .compatible = "zyxel,nas542-pwm5-buzzer" }, { }
++};
++MODULE_DEVICE_TABLE(of, nas542_buzzer_of_match);
++
++static struct platform_driver nas542_buzzer_driver = {
++	.probe = nas542_buzzer_probe,
++	.remove_new = nas542_buzzer_remove,
++	.driver = { .name = "nas542-buzzer", .of_match_table = nas542_buzzer_of_match },
++};
++module_platform_driver(nas542_buzzer_driver);
++
++MODULE_DESCRIPTION("Zyxel NAS542 passive PWM5 buzzer");
++MODULE_LICENSE("GPL");
+-- 
+2.39.5
+

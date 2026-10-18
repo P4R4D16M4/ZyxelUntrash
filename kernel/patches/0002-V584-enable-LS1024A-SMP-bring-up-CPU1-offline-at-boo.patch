@@ -1,0 +1,108 @@
+From f2d85dc4848dab7fd0eaac0b89e4f045536dcebc Mon Sep 17 00:00:00 2001
+From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
+Date: Thu, 8 Oct 2026 09:53:27 +0200
+Subject: [PATCH 02/15] V584: enable LS1024A SMP bring-up (CPU1 offline at
+ boot)
+
+- DT: cpu@900/@901 with MPIDR from stock logs, enable-method
+  fsl,ls1024a-smp, SCU node
+- platsmp: ioremap the reset vector page (phys 0 is outside the
+  NAS542 linear map, RAM starts at 0x04000000)
+- build platsmp.o for CONFIG_SMP
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ arch/arm/boot/dts/mindspeed/comcerto2000.dtsi | 21 +++++++++++++------
+ arch/arm/mach-comcerto/Makefile               |  1 +
+ arch/arm/mach-comcerto/platsmp.c              | 12 ++++++++---
+ 3 files changed, 25 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi b/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
+index 9566a36b8..4b5ff8dfd 100644
+--- a/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
++++ b/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
+@@ -15,20 +15,29 @@ cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 
+-		cpu0: cpu@0 {
++		/* V584: MPIDR 0x80000900/0x80000901 (stock boot logs, socket 9);
++		 * secondary bring-up via clkcore reset/clamp (Bonstra platsmp). */
++		cpu0: cpu@900 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+-			reg = <0>;
+-			status = "okay";
++			reg = <0x900>;
++			enable-method = "fsl,ls1024a-smp";
++			next-level-cache = <&l2>;
+ 		};
+-		cpu1: cpu@1 {
++		cpu1: cpu@901 {
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a9";
+-			reg = <1>;
+-			status = "disabled";
++			reg = <0x901>;
++			enable-method = "fsl,ls1024a-smp";
++			next-level-cache = <&l2>;
+ 		};
+ 	};
+ 
++	scu@fff00000 {
++		compatible = "arm,cortex-a9-scu";
++		reg = <0xfff00000 0x100>;
++	};
++
+ 	memory@4000000 {
+ 		device_type = "memory";
+ 		reg = <0x04000000 0x3c000000>;
+diff --git a/arch/arm/mach-comcerto/Makefile b/arch/arm/mach-comcerto/Makefile
+index 2be41253d..9c0e46b44 100644
+--- a/arch/arm/mach-comcerto/Makefile
++++ b/arch/arm/mach-comcerto/Makefile
+@@ -1,3 +1,4 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ # The directory itself is selected through machine-$(CONFIG_ARCH_COMCERTO).
+ obj-y += board-dt.o
++obj-$(CONFIG_SMP) += platsmp.o
+diff --git a/arch/arm/mach-comcerto/platsmp.c b/arch/arm/mach-comcerto/platsmp.c
+index 91a196ea9..98ff7da73 100644
+--- a/arch/arm/mach-comcerto/platsmp.c
++++ b/arch/arm/mach-comcerto/platsmp.c
+@@ -9,6 +9,7 @@
+ #include <linux/of.h>
+ #include <linux/of_address.h>
+ #include <linux/regmap.h>
++#include <linux/sizes.h>
+ #include <linux/mfd/syscon.h>
+ 
+ #include <asm/cacheflush.h>
+@@ -77,7 +78,12 @@ static void __init ls1024a_smp_prepare_cpus(unsigned int max_cpus)
+ 	if (!scu_base)
+ 		return;
+ 
+-	vectors_base = phys_to_virt(CPU_VECTORS_PHYS);
++	/*
++	 * NAS542: Linux RAM starts at 0x04000000, so physical 0 is not in the
++	 * linear map.  Map the reset vector page uncached instead; CPU1 fetches
++	 * it with MMU and caches off.
++	 */
++	vectors_base = ioremap(CPU_VECTORS_PHYS, SZ_4K);
+ 	if (!vectors_base)
+ 		goto unmap_scu;
+ 
+@@ -95,8 +101,8 @@ static void __init ls1024a_smp_prepare_cpus(unsigned int max_cpus)
+ 	 * vector.
+ 	 */
+ 	writel(__pa_symbol(secondary_startup), vectors_base + SW_RESET_ADDR);
+-	smp_wmb();
+-	__sync_cache_range_w(vectors_base, 0x24);
++	wmb();
++	iounmap(vectors_base);
+ 
+ unmap_scu:
+ 	iounmap(scu_base);
+-- 
+2.39.5
+

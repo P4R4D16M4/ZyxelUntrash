@@ -1,0 +1,162 @@
+#!/usr/bin/python3
+"""untrash-power - power management of the board MCU like the stock firmware
+(pwrmg_main_model, rcS2, rc.shutdown; decoded 2026-10-10):
+
+  MCU I2C bus 0, address 0x0a, register 0x0a takes a word "command, value":
+    0x07 power on after power loss: 1 = power on, 0 = stay off
+         (stock "always" = 1, "disable" = 0, "former" = 1 while running and 0
+         after a clean shutdown -> back on only if it was running)
+    0x06 Wake-on-LAN: 0 = on, 3 = off   (stock wol.status present = on)
+  Scheduled power-on: RTC alarm (rtc-ht1382 wakealarm: minute, hour, date);
+  the MCU switches the NAS on when it fires.
+
+  untrash-power boot       apply power-loss mode and WoL (untrash-power.service)
+  untrash-power shutdown   "former": stay off after power loss; set the RTC
+                           alarm to the next scheduled power-on
+  untrash-power tick       untrash-power.timer: scheduled power-off/reboot due?
+  untrash-power next       JSON: next power-on / power-off of the schedule
+Settings: /etc/untrash/settings.json "power" {pwron always|never|former, wol,
+schedule_active, schedule [{action on|off|reboot, kind daily|weekly|monthly,
+hour, minute, day 0=Mon..6, mday}]}.
+"""
+import datetime
+import fcntl
+import json
+import os
+import subprocess
+import sys
+
+SETTINGS = os.environ.get("ZT_SETTINGS", "/etc/untrash/settings.json")
+I2C_DEV = os.environ.get("ZT_POWER_I2C", "/dev/i2c-0")
+I2C_LOG = os.environ.get("ZT_POWER_I2C_LOG")          # tests: log instead of the bus
+WAKEALARM = os.environ.get("ZT_POWER_WAKEALARM", "/sys/class/rtc/rtc0/wakealarm")
+STATE = os.environ.get("ZT_POWER_STATE", "/var/lib/untrash/power-tick")
+MCU = 0x0a
+I2C_SLAVE = 0x0703
+ALARM_MAX_DAYS = 27          # the RTC alarm compares only minute, hour and date
+
+
+def power():
+    try:
+        return json.load(open(SETTINGS)).get("power") or {}
+    except (OSError, ValueError):
+        return {}
+
+
+def mcu(cmd, value):
+    """SMBus write word to register 0x0a: low byte = command, high = value
+    (stock: i2cset -y 0 0x0a 0x0a 0x<value><cmd> w)."""
+    data = bytes([0x0a, cmd, value])
+    if I2C_LOG:
+        with open(I2C_LOG, "a") as f:
+            f.write("0x0a 0x%02x%02x\n" % (value, cmd))
+        return
+    fd = os.open(I2C_DEV, os.O_RDWR)
+    try:
+        fcntl.ioctl(fd, I2C_SLAVE, MCU)
+        os.write(fd, data)
+    finally:
+        os.close(fd)
+
+
+def occurrences(e, start, days=ALARM_MAX_DAYS + 1):
+    """Times of a schedule entry from start (local time) over the next days."""
+    out = []
+    for d in range(days + 1):
+        day = (start + datetime.timedelta(days=d)).date()
+        if e.get("kind") == "weekly" and day.weekday() != int(e.get("day", 0)) % 7:
+            continue
+        if e.get("kind") == "monthly" and day.day != int(e.get("mday", 1)):
+            continue
+        t = datetime.datetime.combine(day, datetime.time(int(e.get("hour", 0)) % 24, int(e.get("minute", 0)) % 60))
+        if t > start:
+            out.append(t)
+    return out
+
+
+def next_event(p, actions, now):
+    if not p.get("schedule_active"):
+        return None
+    times = [(t, e["action"]) for e in p.get("schedule") or [] if e.get("action") in actions
+             for t in occurrences(e, now)]
+    return min(times) if times else None
+
+
+def cmd_boot():
+    p = power()
+    mode = p.get("pwron", "former")
+    mcu(0x07, 0 if mode == "never" else 1)
+    mcu(0x06, 0 if p.get("wol") else 3)
+    print("power loss: %s, Wake-on-LAN: %s" % (mode, "on" if p.get("wol") else "off"), flush=True)
+    return 0
+
+
+def cmd_shutdown():
+    p = power()
+    if p.get("pwron", "former") == "former":
+        mcu(0x07, 0)                 # clean shutdown: stay off after a power loss
+    nxt = next_event(p, ("on",), datetime.datetime.now())
+    try:
+        with open(WAKEALARM, "w") as f:
+            f.write("0")
+        if nxt:
+            with open(WAKEALARM, "w") as f:
+                f.write(str(int(nxt[0].timestamp())))
+    except OSError as e:
+        print("wakealarm: %s" % e, flush=True)
+        return 1
+    print("next power-on: %s" % (nxt[0].strftime("%Y-%m-%d %H:%M") if nxt else "none"), flush=True)
+    return 0
+
+
+def cmd_tick():
+    """Power-off/reboot entries: due if their time lies between the last tick and now."""
+    p = power()
+    now = datetime.datetime.now()
+    try:
+        last = datetime.datetime.fromtimestamp(float(open(STATE).read()))
+    except (OSError, ValueError):
+        last = now - datetime.timedelta(minutes=1)
+    if now - last > datetime.timedelta(minutes=10):
+        last = now - datetime.timedelta(minutes=1)     # after a long pause: nothing from the past
+    os.makedirs(os.path.dirname(STATE), exist_ok=True)
+    with open(STATE, "w") as f:
+        f.write(str(now.timestamp()))
+    if not p.get("schedule_active"):
+        return 0
+    for e in p.get("schedule") or []:
+        if e.get("action") not in ("off", "reboot"):
+            continue
+        if any(last < t <= now for t in occurrences(e, last - datetime.timedelta(seconds=1), days=1)):
+            act = "poweroff" if e["action"] == "off" else "reboot"
+            print("schedule: %s" % act, flush=True)
+            if not I2C_LOG:
+                subprocess.run(["systemctl", act], check=False)
+            else:
+                with open(I2C_LOG, "a") as f:
+                    f.write("systemctl %s\n" % act)
+            return 0
+    return 0
+
+
+def main():
+    a = sys.argv[1:]
+    if a == ["boot"]:
+        return cmd_boot()
+    if a == ["shutdown"]:
+        return cmd_shutdown()
+    if a == ["tick"]:
+        return cmd_tick()
+    if a == ["next"]:
+        p, now = power(), datetime.datetime.now()
+        on, off = next_event(p, ("on",), now), next_event(p, ("off", "reboot"), now)
+        print(json.dumps({"on": on[0].isoformat(timespec="minutes") if on else None,
+                          "off": off[0].isoformat(timespec="minutes") if off else None,
+                          "off_action": off[1] if off else None}))
+        return 0
+    print(__doc__)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

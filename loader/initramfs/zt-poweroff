@@ -1,0 +1,4 @@
+#!/bin/sh
+# RAM-only test image shutdown.  BusyBox without -f only asks PID 1 to stop;
+# PID 1 is the interactive RAM shell, so force the kernel SYS_OFF handler.
+exec /bin/busybox poweroff -f

@@ -1,0 +1,248 @@
+From 49763f2d982e44ecb3172890e46a25e02de6a8a9 Mon Sep 17 00:00:00 2001
+From: P4R4D16M4 <patrick@heinzelbecker.com>
+Date: Fri, 9 Oct 2026 12:25:25 +0200
+Subject: [PATCH 11/15] V600f: rtc-ht1382 for the NAS542 RTC at I2C 0x68
+
+The chip is not DS1337 compatible: stock /sbin/rtcAccess writes
+sec/min/hour|0x80/date/month/(weekday)/year to registers 0-6.
+rtc-ds1307 shifted date, month and weekday (stock-written 9 October
+read back as 10 March, Linux-written 9 October as 9 July).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ arch/arm/boot/dts/mindspeed/comcerto2000.dtsi |   8 +-
+ drivers/rtc/Kconfig                           |   7 +
+ drivers/rtc/Makefile                          |   1 +
+ drivers/rtc/rtc-ht1382.c                      | 170 ++++++++++++++++++
+ 4 files changed, 184 insertions(+), 2 deletions(-)
+ create mode 100644 drivers/rtc/rtc-ht1382.c
+
+diff --git a/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi b/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
+index fed88005d..a720889d2 100644
+--- a/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
++++ b/arch/arm/boot/dts/mindspeed/comcerto2000.dtsi
+@@ -218,9 +218,13 @@ i2c: i2c@9049c000 {
+ 
+ 			/* NAS542 board MCU (fan/power/watchdog/MAC EEPROM), stock /proc/mcu. */
+ 
+-			/* DS1337-compatible RTC (stock rtcAccess: regs 0-13, alarm 2 = wake). */
++			/*
++			 * HT1382-style RTC, NOT DS1337 compatible: stock rtcAccess
++			 * writes sec/min/hour|0x80/date/month/-/year to regs 0-6
++			 * (weekday in reg 5); rtc-ds1307 shifted date/month/weekday.
++			 */
+ 			rtc@68 {
+-				compatible = "dallas,ds1337";
++				compatible = "holtek,ht1382";
+ 				reg = <0x68>;
+ 			};
+ 		};
+diff --git a/drivers/rtc/Kconfig b/drivers/rtc/Kconfig
+index 92f46a631..05d662650 100644
+--- a/drivers/rtc/Kconfig
++++ b/drivers/rtc/Kconfig
+@@ -244,6 +244,13 @@ config RTC_DRV_AS3722
+ 	  This driver can also be built as a module. If so, the module
+ 	  will be called rtc-as3722.
+ 
++config RTC_DRV_HT1382
++	tristate "Holtek HT1382-style RTC (Zyxel NAS542)"
++	help
++	  The I2C clock at 0x68 on the Zyxel NAS542: DS1307-like address but
++	  date, month and weekday in a different order, 24 h flag in bit 7 of
++	  the hour register.
++
+ config RTC_DRV_DS1307
+ 	tristate "Dallas/Maxim DS1307/37/38/39/40/41, ST M41T00, EPSON RX-8025, ISL12057"
+ 	select REGMAP_I2C
+diff --git a/drivers/rtc/Makefile b/drivers/rtc/Makefile
+index fd209883e..201304fe8 100644
+--- a/drivers/rtc/Makefile
++++ b/drivers/rtc/Makefile
+@@ -51,6 +51,7 @@ obj-$(CONFIG_RTC_DRV_DS1286)	+= rtc-ds1286.o
+ obj-$(CONFIG_RTC_DRV_DS1302)	+= rtc-ds1302.o
+ obj-$(CONFIG_RTC_DRV_DS1305)	+= rtc-ds1305.o
+ obj-$(CONFIG_RTC_DRV_DS1307)	+= rtc-ds1307.o
++obj-$(CONFIG_RTC_DRV_HT1382)	+= rtc-ht1382.o
+ obj-$(CONFIG_RTC_DRV_DS1343)	+= rtc-ds1343.o
+ obj-$(CONFIG_RTC_DRV_DS1347)	+= rtc-ds1347.o
+ obj-$(CONFIG_RTC_DRV_DS1374)	+= rtc-ds1374.o
+diff --git a/drivers/rtc/rtc-ht1382.c b/drivers/rtc/rtc-ht1382.c
+new file mode 100644
+index 000000000..23e2e600e
+--- /dev/null
++++ b/drivers/rtc/rtc-ht1382.c
+@@ -0,0 +1,170 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * RTC driver for the Holtek HT1382-style clock on the Zyxel NAS542 (I2C 0x68).
++ *
++ * The chip is not DS1337 compatible although it sits at the same address.
++ * Its layout follows from the stock /sbin/rtcAccess (systortc/show) and
++ * from register dumps on hardware (2026-10-09):
++ *
++ *   0x00 seconds (BCD, bit 7 = clock halt)   0x04 month (BCD 1-12)
++ *   0x01 minutes (BCD)                       0x05 day of week (1-7)
++ *   0x02 hours   (BCD, bit 7 = 24 h mode)    0x06 year (BCD, 2000-2099)
++ *   0x03 date    (BCD 1-31)                  0x07 bit 7 = write protect
++ *
++ * Driven by rtc-ds1307 the date, month and weekday registers were shifted
++ * by one (October was read back as July).  Only single-byte SMBus transfers
++ * are used, exactly like the stock tool.
++ */
++
++#include <linux/bcd.h>
++#include <linux/i2c.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/rtc.h>
++
++#define HT1382_SEC	0x00
++#define HT1382_MIN	0x01
++#define HT1382_HOUR	0x02
++#define HT1382_DATE	0x03
++#define HT1382_MONTH	0x04
++#define HT1382_WDAY	0x05
++#define HT1382_YEAR	0x06
++#define HT1382_WP	0x07
++
++#define HT1382_SEC_CH	BIT(7)
++#define HT1382_HOUR_24	BIT(7)
++#define HT1382_HOUR_PM	BIT(5)
++#define HT1382_WP_BIT	BIT(7)
++
++static int ht1382_read_regs(struct i2c_client *client, u8 *regs)
++{
++	int i, ret;
++
++	for (i = HT1382_SEC; i <= HT1382_YEAR; i++) {
++		ret = i2c_smbus_read_byte_data(client, i);
++		if (ret < 0)
++			return ret;
++		regs[i] = ret;
++	}
++	return 0;
++}
++
++static int ht1382_read_time(struct device *dev, struct rtc_time *tm)
++{
++	struct i2c_client *client = to_i2c_client(dev);
++	u8 regs[7];
++	int ret, sec, tries = 3;
++
++	/* Byte-wise reads: retry if the seconds rolled over in between. */
++	do {
++		ret = ht1382_read_regs(client, regs);
++		if (ret)
++			return ret;
++		sec = i2c_smbus_read_byte_data(client, HT1382_SEC);
++		if (sec < 0)
++			return sec;
++	} while ((sec & 0x7f) != (regs[HT1382_SEC] & 0x7f) && --tries);
++
++	if (regs[HT1382_SEC] & HT1382_SEC_CH)
++		return -EINVAL;		/* oscillator halted: time is invalid */
++
++	tm->tm_sec = bcd2bin(regs[HT1382_SEC] & 0x7f);
++	tm->tm_min = bcd2bin(regs[HT1382_MIN] & 0x7f);
++	if (regs[HT1382_HOUR] & HT1382_HOUR_24) {
++		tm->tm_hour = bcd2bin(regs[HT1382_HOUR] & 0x3f);
++	} else {
++		tm->tm_hour = bcd2bin(regs[HT1382_HOUR] & 0x1f) % 12;
++		if (regs[HT1382_HOUR] & HT1382_HOUR_PM)
++			tm->tm_hour += 12;
++	}
++	tm->tm_mday = bcd2bin(regs[HT1382_DATE] & 0x3f);
++	tm->tm_mon = bcd2bin(regs[HT1382_MONTH] & 0x1f) - 1;
++	tm->tm_wday = (regs[HT1382_WDAY] & 0x07) % 7;
++	tm->tm_year = bcd2bin(regs[HT1382_YEAR]) + 100;
++
++	return 0;
++}
++
++static int ht1382_set_time(struct device *dev, struct rtc_time *tm)
++{
++	struct i2c_client *client = to_i2c_client(dev);
++	u8 regs[7];
++	int i, ret;
++
++	if (tm->tm_year < 100 || tm->tm_year > 199)
++		return -EINVAL;
++
++	ret = i2c_smbus_read_byte_data(client, HT1382_WP);
++	if (ret < 0)
++		return ret;
++	if (ret & HT1382_WP_BIT) {
++		ret = i2c_smbus_write_byte_data(client, HT1382_WP,
++						ret & ~HT1382_WP_BIT);
++		if (ret)
++			return ret;
++	}
++
++	/* Same encoding as stock rtcAccess systortc, plus the weekday. */
++	regs[HT1382_SEC] = bin2bcd(tm->tm_sec);
++	regs[HT1382_MIN] = bin2bcd(tm->tm_min);
++	regs[HT1382_HOUR] = bin2bcd(tm->tm_hour) | HT1382_HOUR_24;
++	regs[HT1382_DATE] = bin2bcd(tm->tm_mday);
++	regs[HT1382_MONTH] = bin2bcd(tm->tm_mon + 1);
++	regs[HT1382_WDAY] = tm->tm_wday ? tm->tm_wday : 7;
++	regs[HT1382_YEAR] = bin2bcd(tm->tm_year - 100);
++
++	for (i = HT1382_SEC; i <= HT1382_YEAR; i++) {
++		ret = i2c_smbus_write_byte_data(client, i, regs[i]);
++		if (ret)
++			return ret;
++	}
++	return 0;
++}
++
++static const struct rtc_class_ops ht1382_rtc_ops = {
++	.read_time	= ht1382_read_time,
++	.set_time	= ht1382_set_time,
++};
++
++static int ht1382_probe(struct i2c_client *client)
++{
++	struct rtc_device *rtc;
++
++	if (!i2c_check_functionality(client->adapter, I2C_FUNC_SMBUS_BYTE_DATA))
++		return -ENODEV;
++
++	rtc = devm_rtc_allocate_device(&client->dev);
++	if (IS_ERR(rtc))
++		return PTR_ERR(rtc);
++
++	rtc->ops = &ht1382_rtc_ops;
++	rtc->range_min = RTC_TIMESTAMP_BEGIN_2000;
++	rtc->range_max = RTC_TIMESTAMP_END_2099;
++
++	return devm_rtc_register_device(rtc);
++}
++
++static const struct of_device_id ht1382_of_match[] = {
++	{ .compatible = "holtek,ht1382" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, ht1382_of_match);
++
++static const struct i2c_device_id ht1382_id[] = {
++	{ "ht1382", 0 },
++	{ }
++};
++MODULE_DEVICE_TABLE(i2c, ht1382_id);
++
++static struct i2c_driver ht1382_driver = {
++	.driver = {
++		.name = "rtc-ht1382",
++		.of_match_table = ht1382_of_match,
++	},
++	.probe = ht1382_probe,
++	.id_table = ht1382_id,
++};
++module_i2c_driver(ht1382_driver);
++
++MODULE_DESCRIPTION("Holtek HT1382-style RTC (Zyxel NAS542)");
++MODULE_LICENSE("GPL");
+-- 
+2.39.5
+

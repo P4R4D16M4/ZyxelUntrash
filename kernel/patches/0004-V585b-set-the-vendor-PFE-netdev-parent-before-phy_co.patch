@@ -1,0 +1,32 @@
+From c0f08be919d32fc94e64cb19dfb0273f7d6cfea1 Mon Sep 17 00:00:00 2001
+From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
+Date: Thu, 8 Oct 2026 10:50:58 +0200
+Subject: [PATCH 04/15] V585b: set the vendor PFE netdev parent before
+ phy_connect
+
+V585 hardware (blackbox log): firmware load, PE init and pfe_ctrl_init
+succeed; pfe_eth_init_one -> phy_connect -> phy_attach_direct oopsed on
+the missing netdev parent (same issue as V576 in the port driver).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ drivers/pfe_ctrl/pfe_eth.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/pfe_ctrl/pfe_eth.c b/drivers/pfe_ctrl/pfe_eth.c
+index 870c6855a..f271e94ac 100644
+--- a/drivers/pfe_ctrl/pfe_eth.c
++++ b/drivers/pfe_ctrl/pfe_eth.c
+@@ -3110,6 +3110,9 @@ static int pfe_eth_init_one( struct pfe *pfe, int id )
+ 
+ 	priv = netdev_priv(dev);
+ 	priv->dev = dev;
++	/* ZyxelUntrash V585b: phy_attach_direct() dereferences the netdev's
++	 * parent device (module owner check); without it the probe oopses. */
++	SET_NETDEV_DEV(dev, pfe->dev);
+ 	priv->id = einfo[id].gem_id;
+ 	priv->pfe = pfe;
+ 	/* get gemac tx clock */
+-- 
+2.39.5
+
