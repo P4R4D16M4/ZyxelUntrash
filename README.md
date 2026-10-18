@@ -14,8 +14,7 @@ backup the installer made), and it updates itself with signed A/B system images.
 - **Everything the Zyxel firmware did**, on current software: SMB, FTP, NFS,
   WebDAV, DLNA media server, Time Machine, iSCSI, USB copy button, power
   schedule, fan control, LEDs and the buzzer
-- **All four bays**, including the two behind the ASM1061 PCIe controller that
-  the stock firmware never brought up
+- **All four bays**, including the two behind the ASM1061 PCIe controller 
 - **Safe by construction**: read-only, verified system image (erofs +
   dm-verity), two slots with automatic fallback, hardware watchdog
 
