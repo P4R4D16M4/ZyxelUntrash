@@ -33,18 +33,19 @@ python3 "$HERE/tests/test_exec_bits.py" "$HERE/untrash-files" >&2 || { echo "exe
 SEC=${ZT_SLOT_KEY:-$ROOT/inputs/keys/untrash-dev.sec}
 PROFILE=${ZT_PROFILE:-dev}; [[ $PROFILE == dev || $PROFILE == release ]] || { echo "ZT_PROFILE dev|release" >&2; exit 1; }
 MAXCPUS=; [[ ${ZT_SMP:-1} == 1 ]] || MAXCPUS=" maxcpus=1"
-FW="$ROOT/inputs/pfe-firmware"
+# the network driver must use the stock PE firmware of the NAS (untrash-pfe-firmware);
+# no firmware is shipped in the image
+grep -q '^CONFIG_PFE_CTRL_FW12=y' "$KB/.config" || { echo "kernel without CONFIG_PFE_CTRL_FW12" >&2; exit 1; }
 ZI="$KB/arch/arm/boot/zImage"; DTB="$KB/arch/arm/boot/dts/mindspeed/zyxel-nas542.dtb"
 MODS=$(ls -d "$KB"/modules-staging/lib/modules/*); REL=$(basename "$MODS")
 W=$(mktemp -d); trap 'rm -rf "$W"' EXIT
 pad4k() { local s; s=$(stat -c %s "$1"); truncate -s $(( (s + 4095) / 4096 * 4096 )) "$1"; }
 
-# 1. root tree: Debian + our kernel modules + PFE firmware
+# 1. root tree: Debian + our kernel modules
 cp -a "$RFS" "$W/root"
 mkdir -p "$W/root/usr/lib/modules" "$W/root/usr/lib/firmware"
 cp -a "$MODS" "$W/root/usr/lib/modules/"
 /usr/sbin/depmod -b "$W/root/usr" "$REL" 2>/dev/null || /sbin/depmod -b "$W/root/usr" "$REL"
-cp "$FW"/*.elf "$W/root/usr/lib/firmware/"
 rm -f "$W/root/etc/machine-id"; : >"$W/root/etc/machine-id"	# systemd fills it at boot (volatile)
 echo "$VER" >"$W/root/etc/untrash-version"
 # UntrashOS integration: boot-state confirmation and the USB blackbox

@@ -1,7 +1,7 @@
 From 49763f2d982e44ecb3172890e46a25e02de6a8a9 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrick@heinzelbecker.com>
 Date: Fri, 9 Oct 2026 12:25:25 +0200
-Subject: [PATCH 11/15] V600f: rtc-ht1382 for the NAS542 RTC at I2C 0x68
+Subject: [PATCH 11/16] V600f: rtc-ht1382 for the NAS542 RTC at I2C 0x68
 
 The chip is not DS1337 compatible: stock /sbin/rtcAccess writes
 sec/min/hour|0x80/date/month/(weekday)/year to registers 0-6.

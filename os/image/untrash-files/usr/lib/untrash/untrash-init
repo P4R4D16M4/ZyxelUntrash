@@ -146,6 +146,10 @@ for n in 0 1; do
 	log "eth$n MAC from the stock env"
 done
 
+# PFE PE firmware from the NAS's own stock firmware (NAND rootfs1), cached on
+# the state; must happen before udev loads pfe.ko (untrash-pfe-firmware)
+/usr/lib/untrash/untrash-pfe-firmware /state/firmware/pfe || log "no PFE firmware: no network"
+
 if [ -n "$DISK" ] && SWAP=$(part_dev ut-swap "$DISK"); then
 	if empty "$SWAP"; then
 		mkswap -L ut-swap "$SWAP" >/dev/null 2>&1 && log "mkswap $SWAP" || log "mkswap $SWAP failed"

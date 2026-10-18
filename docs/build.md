@@ -17,14 +17,16 @@ sudo apt install build-essential gcc-arm-linux-gnueabihf bc bison flex libssl-de
 
 ## 2. External inputs (`inputs/`, never committed)
 
-`make inputs` (`tools/fetch-inputs.sh`) downloads them and checks fixed SHA-256 sums:
+`make inputs` (`tools/fetch-inputs.sh`) downloads them and checks fixed SHA-256 sums.
+The firmware of the network engine (PFE) is not among them: every NAS542
+carries it in its stock firmware, and UntrashOS copies it from there on the NAS
+at boot (`untrash-pfe-firmware`); the image ships no proprietary firmware.
 
 | File | Source |
 |---|---|
 | `inputs/src/linux-6.6.145.tar.xz` | kernel.org |
 | `inputs/src/kexec-tools-2.0.31.tar.xz` | kernel.org |
 | `inputs/src/busybox-1.37.0.tar.bz2` | busybox.net (static userland of the loader) |
-| `inputs/pfe-firmware/*_c2000*.elf` | network engine (PFE) firmware, pfe_13 set, from github.com/scpcom/linux (branch `ls1024a-6.1.y`, pinned commit). NXP/Freescale firmware without a stated license: you download it, this project does not redistribute it. It ends up in the system image only. |
 | `inputs/mkosi/` | github.com/systemd/mkosi, v25.3 |
 
 You provide one file yourself:

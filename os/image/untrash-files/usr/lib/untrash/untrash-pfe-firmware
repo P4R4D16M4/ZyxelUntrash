@@ -1,0 +1,76 @@
+#!/bin/sh
+# untrash-pfe-firmware [CACHE]  (untrash-init, before systemd and udev)
+#
+# The network engine (PFE) of the NAS542 needs its PE firmware.  UntrashOS
+# does not ship it: every NAS542 carries the matching set (pfe_12_00_2) in its
+# own stock firmware, NAND partition rootfs1 (UBI volume "rootfs", untouched by
+# UntrashOS).  It is copied once into CACHE (default /state/firmware/pfe) and
+# the kernel firmware search path is pointed there; pfe.ko loads it later.
+#
+# Only a set the driver can use is accepted: version string pfe_12_00_2 and
+# the shared-memory sizes of the stock driver (CONFIG_PFE_CTRL_FW12,
+# tools/pfe/check-fw12-layout.py).  Read-only: UBI attaches rootfs1 read-only
+# (the MTD is registered non-writable).
+# Tests: ZT_PFE_SRC = a directory standing in for the mounted stock rootfs,
+# ZT_PFE_FWPATH = file standing in for the firmware_class path parameter.
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+D=${1:-/state/firmware/pfe}
+FWPATH=${ZT_PFE_FWPATH:-/sys/module/firmware_class/parameters/path}
+UBINUM=9
+MNT=/run/untrash-stockfs
+log() { { echo "UNTRASH-PFE: $*" >/dev/kmsg; } 2>/dev/null || echo "UNTRASH-PFE: $*"; }
+
+# .dmem_sh sizes of the pfe_12_00_2 class and util images (bytes)
+want_class=4416 want_util=1505
+dmem_sh() {	# $1 = ELF32 big-endian -> size of section .dmem_sh, empty if none
+	python3 - "$1" <<'P' 2>/dev/null
+import struct, sys
+b = open(sys.argv[1], "rb").read()
+if b[:4] != b"\x7fELF" or b[5] != 2:
+    sys.exit(1)
+shoff, = struct.unpack(">I", b[32:36]); shentsize, shnum, shstrndx = struct.unpack(">HHH", b[46:52])
+sh = [struct.unpack(">IIIIIIIIII", b[shoff + i * shentsize:shoff + i * shentsize + 40]) for i in range(shnum)]
+strtab = b[sh[shstrndx][4]:sh[shstrndx][4] + sh[shstrndx][5]]
+for s in sh:
+    if strtab[s[0]:strtab.index(b"\0", s[0])] == b".dmem_sh":
+        print(s[5])
+P
+}
+usable() {	# $1 = directory with *_c2000.elf
+	for f in class tmu util; do [ -s "$1/${f}_c2000.elf" ] || return 1; done
+	grep -q pfe_12_00_2 "$1/class_c2000.elf" || return 1
+	[ "$(dmem_sh "$1/class_c2000.elf")" = $want_class ] && [ "$(dmem_sh "$1/util_c2000.elf")" = $want_util ]
+}
+
+if ! usable "$D"; then
+	src=${ZT_PFE_SRC:-}
+	attached=
+	if [ -z "$src" ]; then
+		mtd=$(sed -n 's/^mtd\([0-9]*\): .* "rootfs1"$/\1/p' /proc/mtd)
+		if [ -z "$mtd" ]; then log "no NAND rootfs1: no PFE firmware"; exit 1; fi
+		if ! ubiattach -m "$mtd" -d $UBINUM -O 2048 >/dev/null 2>&1; then
+			log "ubiattach rootfs1 failed"; exit 1
+		fi
+		attached=1
+		mkdir -p $MNT
+		if mount -t ubifs -o ro ubi$UBINUM:rootfs $MNT 2>/dev/null; then src=$MNT
+		else log "mount of the stock rootfs failed"; fi
+	fi
+	if [ -n "$src" ]; then
+		rm -rf "$D.new"; mkdir -p "$D.new"
+		cp "$src"/lib/firmware/*_c2000*.elf "$D.new/" 2>/dev/null
+		if usable "$D.new"; then
+			rm -rf "$D"; mv "$D.new" "$D"; sync
+			log "PE firmware pfe_12_00_2 copied from the stock firmware (rootfs1)"
+		else
+			rm -rf "$D.new"; log "stock rootfs has no usable pfe_12_00_2 PE firmware"
+		fi
+	fi
+	if [ -n "$attached" ]; then
+		mountpoint -q $MNT && umount $MNT
+		ubidetach -d $UBINUM >/dev/null 2>&1
+	fi
+fi
+usable "$D" || exit 1
+printf '%s' "$D" >"$FWPATH"
+log "firmware path $D"

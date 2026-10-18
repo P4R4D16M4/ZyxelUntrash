@@ -1,7 +1,7 @@
 From f2d85dc4848dab7fd0eaac0b89e4f045536dcebc Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Thu, 8 Oct 2026 09:53:27 +0200
-Subject: [PATCH 02/15] V584: enable LS1024A SMP bring-up (CPU1 offline at
+Subject: [PATCH 02/16] V584: enable LS1024A SMP bring-up (CPU1 offline at
  boot)
 
 - DT: cpu@900/@901 with MPIDR from stock logs, enable-method

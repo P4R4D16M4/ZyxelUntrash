@@ -1,7 +1,7 @@
 From bbdb5d1acb083c489b4e5cbe9c10c7b85b336305 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Thu, 8 Oct 2026 10:05:15 +0200
-Subject: [PATCH 03/15] V585: vendor PFE driver (scpcom pfe_ctrl, pfe_13_00_2)
+Subject: [PATCH 03/16] V585: vendor PFE driver (scpcom pfe_ctrl, pfe_13_00_2)
  as module
 
 - import drivers/pfe_ctrl and drivers/pfe from scpcom/linux ls1024a-6.1.y

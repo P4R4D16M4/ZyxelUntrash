@@ -1,7 +1,7 @@
 From e9faab2bf5bda483a2b5e287cbdafd9a4b6c3bdd Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrick@heinzelbecker.com>
 Date: Fri, 9 Oct 2026 10:28:04 +0200
-Subject: [PATCH 10/15] V600e: UART0 is a DesignWare APB UART
+Subject: [PATCH 10/16] V600e: UART0 is a DesignWare APB UART
  (snps,dw-apb-uart)
 
 Hardware read 2026-10-09: CTR 0x44570110 ("DW"), UCV "308*".  As plain

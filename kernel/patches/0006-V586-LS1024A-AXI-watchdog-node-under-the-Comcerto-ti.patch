@@ -1,7 +1,7 @@
 From 2973d595d85885c8b59697ae6f3b417689b7b420 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Thu, 8 Oct 2026 11:44:25 +0200
-Subject: [PATCH 06/15] V586: LS1024A AXI watchdog node under the Comcerto
+Subject: [PATCH 06/16] V586: LS1024A AXI watchdog node under the Comcerto
  timer
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

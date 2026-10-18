@@ -8,27 +8,20 @@
 # inputs/src/linux-6.6.145.tar.xz          kernel.org (kernel source)
 # inputs/src/kexec-tools-2.0.31.tar.xz     kernel.org (kexec for the loader)
 # inputs/src/busybox-1.37.0.tar.bz2        busybox.net (loader userland)
-# inputs/pfe-firmware/*_c2000.elf          PFE network engine firmware, set
-#                                          pfe_13 matching the vendor driver
-#                                          (github.com/scpcom/linux, branch
-#                                          ls1024a-6.1.y, firmware/)
+# The PFE network engine firmware is not an input: every NAS542 carries it
+# in its stock firmware, UntrashOS copies it from there on the NAS
+# (os/image/untrash-files/usr/lib/untrash/untrash-pfe-firmware).
 #
 # Yours, see docs/build.md: inputs/keys/untrash-dev.sec (slot signing key).
 set -Eeuo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 IN=$ROOT/inputs
-PFE_COMMIT=a8447d65994c4d66dccb501282f4e58fb22a3d70
-PFE_URL=https://raw.githubusercontent.com/scpcom/linux/$PFE_COMMIT/firmware
 
 # path  url  sha256
 LIST=(
 	"src/linux-6.6.145.tar.xz https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.145.tar.xz de100e33d8ad8b6f4b3d2335b179e961be3c00ae7a39efdb052182a8d8bf0126"
 	"src/busybox-1.37.0.tar.bz2 https://busybox.net/downloads/busybox-1.37.0.tar.bz2 3311dff32e746499f4df0d5df04d7eb396382d7e108bb9250e7b519b837043a4"
 	"src/kexec-tools-2.0.31.tar.xz https://kernel.org/pub/linux/utils/kernel/kexec/kexec-tools-2.0.31.tar.xz 8a8f350ddc66e1c905a3ab525a7e9ba96c81e04e70ef69397b0155b67b922c31"
-	"pfe-firmware/class_c2000.elf $PFE_URL/class_c2000.elf a88363f9f4e840aed95f95e0eba8054219cf840659a51eca4db9d0f2c79cf89b"
-	"pfe-firmware/tmu_c2000.elf $PFE_URL/tmu_c2000.elf b874d8ad4d2d0142f9c6f31e00b7d650cca8c13eb5dae781f3387bc825ccd7d8"
-	"pfe-firmware/util_c2000.elf $PFE_URL/util_c2000.elf 5d45b6715e21a148a69121e3d4f19ae42b62ccdf8a49ec597a1b18d7c2ebbf4b"
-	"pfe-firmware/util_c2000_revA0.elf $PFE_URL/util_c2000_revA0.elf 68680f3a3c6777f058fe634cdaece26a5d133945cf962ab909899ca3477ee5ef"
 )
 fail=0
 for e in "${LIST[@]}"; do

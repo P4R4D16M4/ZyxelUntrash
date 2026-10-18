@@ -1,0 +1,146 @@
+From d9b235656c56c290a089ed309517c189e4e2b08d Mon Sep 17 00:00:00 2001
+From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
+Date: Sun, 18 Oct 2026 21:02:04 +0200
+Subject: [PATCH 16/16] pfe_ctrl: CONFIG_PFE_CTRL_FW12 for the stock
+ pfe_12_00_2 firmware
+
+The memory the driver shares with the PE firmware is laid out like
+pfe_ctrl_12_00_2 (Synology GPL source, same version as the stock Zyxel
+pfe.ko): no resume words, tunnel context slot of the pfe_12 size, no GRE
+tunnel cache in LMEM; tunnel offload commands are refused and TSO (pfe_13
+no-copy headers) is not offered.  Checked offline against the stock pfe.ko
+symbol layout (tools/pfe/check-fw12-layout.py).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ drivers/pfe/c2000/control_storage.c | 14 ++++++++++++++
+ drivers/pfe/common/control_tunnel.c |  5 +++++
+ drivers/pfe_ctrl/Kconfig            | 13 +++++++++++++
+ drivers/pfe_ctrl/pfe_ctrl.c         |  4 ++++
+ drivers/pfe_ctrl/pfe_eth.c          |  4 ++++
+ 5 files changed, 40 insertions(+)
+
+diff --git a/drivers/pfe/c2000/control_storage.c b/drivers/pfe/c2000/control_storage.c
+index 3a978e2c1..7b4a89392 100644
+--- a/drivers/pfe/c2000/control_storage.c
++++ b/drivers/pfe/c2000/control_storage.c
+@@ -85,7 +85,13 @@ struct slist_head sa_cache_by_h[NUM_SA_ENTRIES] __attribute__((aligned(32)));
+ struct slist_head sa_cache_by_spi[NUM_SA_ENTRIES] __attribute__((aligned(32)));
+ struct slist_head rt_cache[NUM_ROUTE_ENTRIES] __attribute__((aligned(32)));
+ 
++#ifdef CONFIG_PFE_CTRL_FW12
++/* pfe_12 firmware: no GRE tunnel cache in PE LMEM; kept in host memory only
++ * (tunnel commands are refused, see M_tnl_cmdproc) */
++struct slist_head gre_tunnel_cache[NUM_GRE_TUNNEL_ENTRIES];
++#else
+ struct slist_head CLASS_PE_LMEM_SH(gre_tunnel_cache)[NUM_GRE_TUNNEL_ENTRIES];
++#endif
+ 
+ struct voice_buffer UTIL_DDR_SH(voicebuf)[VOICEBUF_MAX] __attribute__((aligned(32)));
+ U8 UTIL_DMEM_SH(voice_buffers_loaded);
+@@ -109,7 +115,15 @@ PNatt_Socket_v4 gNatt_Sock_v4_cache[NUM_IPSEC_SOCK_ENTRIES] __attribute__((align
+ struct tIPSec_hw_context gIpSecHWCtx __attribute__((aligned(32)));
+ int gIpsec_available = 0;
+ 
++#ifdef CONFIG_PFE_CTRL_FW12
++/* pfe_12 firmware: its tunnel context is 328 bytes (pfe_13: 352).  Keep the
++ * slot in DMEM at the pfe_12 size (same section name = same place in the
++ * sorted layout) and the pfe_13 structure in host memory. */
++struct tTNL_context gTNLCtx;
++static U8 __attribute__((section(".class_dmem_sh_gTNLCtx"), used)) gTNLCtx_fw12_slot[328];
++#else
+ struct tTNL_context CLASS_DMEM_SH(gTNLCtx);
++#endif
+ 
+ CmdProc gCmdProcTable[EVENT_MAX];
+ 
+diff --git a/drivers/pfe/common/control_tunnel.c b/drivers/pfe/common/control_tunnel.c
+index 13b315624..ec98787e8 100644
+--- a/drivers/pfe/common/control_tunnel.c
++++ b/drivers/pfe/common/control_tunnel.c
+@@ -951,6 +951,11 @@ static U16 M_tnl_cmdproc(U16 cmd_code, U16 cmd_len, U16 *pcmd)
+ 	U16 retlen = 2;
+ 
+ 	//printk(KERN_INFO "%s: cmd_code=0x%x, cmd_len=%d\n", __func__, cmd_code, cmd_len);
++#ifdef CONFIG_PFE_CTRL_FW12
++	/* the pfe_12 tunnel context differs from this driver's: no offload */
++	pcmd[0] = ERR_UNKNOWN_COMMAND;
++	return retlen;
++#endif
+ 	switch (cmd_code)
+ 	{
+ 		case CMD_TNL_CREATE:
+diff --git a/drivers/pfe_ctrl/Kconfig b/drivers/pfe_ctrl/Kconfig
+index f757422f8..1ab2ae979 100644
+--- a/drivers/pfe_ctrl/Kconfig
++++ b/drivers/pfe_ctrl/Kconfig
+@@ -10,6 +10,19 @@ config PFE_CTRL
+                 MindSpeed pfe kernel module
+                 (copied from "MindSpeed_OpenWRT/sdk-comcerto-openwrt-c2k_nas_3.1-rc2/package/mindspeed/pfe_ctrl")
+ 
++config PFE_CTRL_FW12
++	bool "PE firmware interface pfe_12_00_2 (stock Zyxel NAS542 firmware)"
++	default n
++	depends on PFE_CTRL
++	help
++	  Lay out the memory the driver shares with the PE firmware like
++	  pfe_ctrl_12_00_2, so the driver runs with the pfe_12_00_2 firmware
++	  that every NAS542 carries in its stock firmware (NAND rootfs1).
++	  Without it the driver needs the pfe_13 firmware set.  Differences to
++	  the pfe_13 interface: no "resume" words, the tunnel context has the
++	  pfe_12 size and the GRE tunnel cache does not exist (tunnel offload
++	  commands are refused), no TSO without copy (TSO not offered).
++
+ config PFE_HOTPLUG_CPU
+ 	bool "pfe cpu hotplug"
+ 	default n
+diff --git a/drivers/pfe_ctrl/pfe_ctrl.c b/drivers/pfe_ctrl/pfe_ctrl.c
+index 14dc932c3..e07c0cca2 100644
+--- a/drivers/pfe_ctrl/pfe_ctrl.c
++++ b/drivers/pfe_ctrl/pfe_ctrl.c
+@@ -42,9 +42,11 @@ static struct pe_msg_mailbox CLASS_DMEM_SH2(msg_mailbox);
+ static struct pe_msg_mailbox TMU_DMEM_SH2(msg_mailbox);
+ static struct pe_msg_mailbox UTIL_DMEM_SH2(msg_mailbox);
+ 
++#ifndef CONFIG_PFE_CTRL_FW12	/* pfe_12 firmware has no resume words */
+ static u32 CLASS_DMEM_SH2(resume);
+ static u32 TMU_DMEM_SH2(resume);
+ static u32 UTIL_DMEM_SH2(resume);
++#endif
+ 
+ static int pfe_ctrl_timer(void *data);
+ 
+@@ -89,6 +91,7 @@ void pfe_ctrl_suspend(struct pfe_ctrl *ctrl)
+ 	mutex_lock(&ctrl->mutex);
+ 
+ 	initialized = 0;
++#ifndef CONFIG_PFE_CTRL_FW12
+ 	for (id = CLASS0_ID; id <= CLASS_MAX_ID; id++)
+ 			pe_dmem_write(id, cpu_to_be32(0x1), (unsigned long)virt_to_class_dmem(&class_resume), 4);
+ 
+@@ -96,6 +99,7 @@ void pfe_ctrl_suspend(struct pfe_ctrl *ctrl)
+ 			pe_dmem_write(id, cpu_to_be32(0x1), (unsigned long)virt_to_class_dmem(&tmu_resume), 4);
+ 
+ 	pe_dmem_write(UTIL_ID, cpu_to_be32(0x1), (unsigned long)virt_to_class_dmem(&util_resume), 4);
++#endif
+ 
+ 	pe_sync_stop(&pfe->ctrl, 0xFF);
+ 
+diff --git a/drivers/pfe_ctrl/pfe_eth.c b/drivers/pfe_ctrl/pfe_eth.c
+index f271e94ac..99b4e3a6b 100644
+--- a/drivers/pfe_ctrl/pfe_eth.c
++++ b/drivers/pfe_ctrl/pfe_eth.c
+@@ -3182,6 +3182,10 @@ static int pfe_eth_init_one( struct pfe *pfe, int id )
+ 	/* supported features */
+ 	dev->hw_features = NETIF_F_RXCSUM | NETIF_F_IP_CSUM |  NETIF_F_IPV6_CSUM |
+ 				NETIF_F_SG | NETIF_F_TSO;
++#ifdef CONFIG_PFE_CTRL_FW12
++	/* this driver's TSO uses the pfe_13 "no copy" headers */
++	dev->hw_features &= ~NETIF_F_TSO;
++#endif
+ 
+ 	/* enabled by default */
+ 	dev->features = dev->hw_features & ~NETIF_F_TSO;
+-- 
+2.39.5
+

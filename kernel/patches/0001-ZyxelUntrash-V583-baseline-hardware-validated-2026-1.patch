@@ -1,7 +1,7 @@
 From 0d00f79da3117e62db872df360acaa4c30d5a354 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Thu, 8 Oct 2026 09:50:39 +0200
-Subject: [PATCH 01/15] ZyxelUntrash V583 baseline (hardware-validated
+Subject: [PATCH 01/16] ZyxelUntrash V583 baseline (hardware-validated
  2026-10-08)
 
 Snapshot of all NAS542 changes on top of Linux 6.6.145 as booted in the

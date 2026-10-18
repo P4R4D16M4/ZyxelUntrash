@@ -28,10 +28,12 @@ backup the installer made), and it updates itself with signed A/B system images.
 
 ## Status
 
-UntrashOS runs as the daily system on a NAS542 with four disks.  A ready-made
-installer image is not published yet: the network firmware of the SoC (NXP PFE)
-has no stated license, so for now you build the image yourself and the build
-downloads that firmware from its public source (see [Building](docs/build.md)).
+UntrashOS runs as the daily system on a NAS542 with four disks.  The images
+contain no proprietary firmware: the network firmware of the SoC (NXP PFE) is
+taken from the stock firmware already on every NAS542.  A ready-made installer
+image will be published once the source-built loader and this firmware path
+have passed their hardware test; until then you can build it yourself
+([Building](docs/build.md)).
 
 ## License
 

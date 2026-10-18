@@ -80,6 +80,10 @@ test:
 	python3 os/image/tests/test_export_host.py
 	python3 os/image/tests/test_tv_host.py
 	python3 os/image/tests/test_wdt_host.py
+	python3 os/image/tests/test_boot_health_pfe_host.py
+	@if [ -f inputs/test/stock-pfe.ko -a -f $(B)/kernel-system/drivers/pfe_ctrl/pfe.ko ]; then \
+	  python3 tools/pfe/check-fw12-layout.py $(B)/kernel-system/drivers/pfe_ctrl/pfe.ko inputs/test/stock-pfe.ko; \
+	 else echo "skip PFE firmware layout check (needs make kernel + inputs/test/stock-pfe.ko)"; fi
 	PATH=$$PATH:/usr/sbin python3 os/image/tests/test_adblock_host.py
 	python3 tools/i18n/build.py --check
 	python3 tools/manual/build.py --check

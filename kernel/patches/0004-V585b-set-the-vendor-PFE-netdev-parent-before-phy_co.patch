@@ -1,7 +1,7 @@
 From c0f08be919d32fc94e64cb19dfb0273f7d6cfea1 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Thu, 8 Oct 2026 10:50:58 +0200
-Subject: [PATCH 04/15] V585b: set the vendor PFE netdev parent before
+Subject: [PATCH 04/16] V585b: set the vendor PFE netdev parent before
  phy_connect
 
 V585 hardware (blackbox log): firmware load, PE init and pfe_ctrl_init

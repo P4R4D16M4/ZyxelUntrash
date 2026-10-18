@@ -155,13 +155,28 @@ the stick, write of the loader into `kernel2`, read-back verification.
 
 ## 7. Network (PFE)
 
-The vendor PFE driver `pfe_ctrl` (version 13_00_2, from the scpcom LS1024A
-kernel, patches 0003/0004/0008) works on Linux 6.6 with the **pfe_13 firmware
-set** (`class_c2000.elf`, `tmu_c2000.elf`, `util_c2000.elf`,
-`util_c2000_revA0.elf`; `tools/fetch-inputs.sh` downloads it).  The stock
-firmware ships the older pfe_12 set; it does not match this driver.  The PFE
-must stop its DMA before kexec/reboot (patch 0008).  The stock `pfe.ko` cannot
-be loaded under 6.6 (163 unresolved symbols).
+The vendor PFE driver `pfe_ctrl` (13_00_2, from the scpcom LS1024A kernel,
+patches 0003/0004/0008) runs on Linux 6.6.  Driver and PE firmware share
+memory (sections `.class_dmem_sh`, `.tmu_dmem_sh`, `.util_dmem_sh`,
+`.class_pe_lmem_sh`, `.util_ddr_sh`, each variable in its own section, sorted
+by name, 8-byte aligned by `control_link.lds`); that layout must match the
+firmware byte for byte.
+
+- The stock firmware is **pfe_12_00_2** (with stock driver
+  `pfe_ctrl_12_00_2`; GPL source of that version: Synology,
+  github.com/scpcom/linux branch `dsgpl-3.2.y-comcerto2k`).  It is in the stock
+  root file system (NAND `rootfs1`, UBI volume `rootfs`, `/lib/firmware`) and in
+  the stock kernel's initramfs (`kernel1`), on every NAS542.
+- pfe_13 adds three `resume` words, a GRE tunnel cache and a bigger tunnel
+  context (352 instead of 328 bytes); everything behind them moves.
+  `CONFIG_PFE_CTRL_FW12` (patch 0016) restores the pfe_12 layout;
+  `tools/pfe/check-fw12-layout.py` compares a built `pfe.ko` with the stock
+  `pfe.ko` (whose symbol table survived) section by section.
+- UntrashOS copies the stock set once from `rootfs1` to `/state/firmware/pfe`
+  (`untrash-pfe-firmware`, before udev loads the driver) and accepts only
+  version `pfe_12_00_2` with the expected `.dmem_sh` sizes.
+- The PFE must stop its DMA before kexec/reboot (patch 0008).  The stock
+  `pfe.ko` itself cannot be loaded under 6.6 (163 unresolved symbols).
 
 ## 8. Software traps (each one cost hardware runs)
 

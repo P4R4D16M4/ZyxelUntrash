@@ -1,7 +1,7 @@
 From 32f55fd15d777f620dd58fb51587f1d3db897022 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Sun, 18 Oct 2026 20:02:11 +0200
-Subject: [PATCH 14/15] V600i: rtc-ht1382 wake alarm (stock rtcAccess
+Subject: [PATCH 14/16] V600i: rtc-ht1382 wake alarm (stock rtcAccess
  registers, no IRQ)
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

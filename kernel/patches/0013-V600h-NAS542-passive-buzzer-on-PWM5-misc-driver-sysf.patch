@@ -1,7 +1,7 @@
 From ab0282cd10f2b30adead5b965c1fa36fc7d28f34 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Sun, 18 Oct 2026 20:02:11 +0200
-Subject: [PATCH 13/15] V600h: NAS542 passive buzzer on PWM5 (misc driver,
+Subject: [PATCH 13/16] V600h: NAS542 passive buzzer on PWM5 (misc driver,
  sysfs play)
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>

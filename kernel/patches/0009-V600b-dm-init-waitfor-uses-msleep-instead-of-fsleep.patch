@@ -1,7 +1,7 @@
 From db40b0f2c9f81597d6102a62b61fd9c02d229035 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Thu, 8 Oct 2026 20:45:47 +0200
-Subject: [PATCH 09/15] V600b: dm-init waitfor uses msleep instead of fsleep
+Subject: [PATCH 09/16] V600b: dm-init waitfor uses msleep instead of fsleep
 
 usleep_range() never returns on the NAS542 kernels (AGENTS.md trap 7);
 dm-mod.waitfor hung the V600 system kernel before root was mounted.

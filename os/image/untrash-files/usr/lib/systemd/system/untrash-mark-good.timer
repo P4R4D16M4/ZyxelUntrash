@@ -1,5 +1,5 @@
 [Unit]
-Description=UntrashOS: confirm the slot after 60 s of healthy uptime
+Description=UntrashOS: confirm the slot once the system is healthy (from 60 s after boot)
 
 [Timer]
 OnBootSec=60s
