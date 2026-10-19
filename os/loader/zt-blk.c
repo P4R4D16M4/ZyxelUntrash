@@ -1,5 +1,5 @@
 /* zt-blk -- block-layer helper for the UntrashOS loader and the slot initrd
- * (I2: boot from slot files on a stick or on a stock md/LVM/ext4 volume).
+ * (boot from slot files on a stick or on a stock md/LVM/ext4 volume).
  * Static, no libraries; the loader's BusyBox 1.19 has no mdadm, lvm, dmsetup,
  * blkid or a usable losetup.
  *

@@ -692,7 +692,7 @@
 "Stock-Datenverbände": "Stock data arrays",
 "Stock-Konfiguration": "Stock configuration",
 "Stock-Konfiguration auf dem Stick": "Stock configuration on the stick",
-"Stock-Konfiguration fehlt auf dem Stick (UNTRASH/*/etc-zyxel, Meilenstein I3).": "Stock configuration missing on the stick (UNTRASH/*/etc-zyxel, milestone I3).",
+"Stock-Konfiguration fehlt auf dem Stick (UNTRASH/*/etc-zyxel).": "Stock configuration missing on the stick (UNTRASH/*/etc-zyxel).",
 "Stock-Konfiguration nach /.untrash/stock-config; beim ersten Start übernimmt UntrashOS": "Stock configuration to /.untrash/stock-config; on the first start UntrashOS takes over",
 "Stock-Konfiguration nach /.untrash/stock-config; beim ersten Start übernimmt UntrashOS Benutzer, Gruppen, Freigaben und SMB-Passwörter": "Stock configuration to /.untrash/stock-config; on the first start UntrashOS takes over users, groups, shares and SMB passwords",
 "Stock-MAC-Adressen übernommen": "Stock MAC addresses taken over",

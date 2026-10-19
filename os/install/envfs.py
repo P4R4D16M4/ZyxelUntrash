@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Barebox envfs (as used by the NAS542 Barebox-C2K) - list, extract, pack.
 
-Layout (verified against the 2026-09-27 env dump): 28-byte superblock
+Layout (verified against a stock env dump): 28-byte superblock
   magic 0x798fba79, priority, crc (crc32 of data), size (data bytes),
   flags, reserved, sb_crc (crc32 of the first 24 bytes);
 then inodes: magic 0x67a8c78d, size, headerlen, name (NUL, padded to 4),

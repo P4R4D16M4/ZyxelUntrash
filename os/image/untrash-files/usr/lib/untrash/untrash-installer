@@ -10,9 +10,9 @@ or ZT_INSTALLER_PORT).  Four ways:
      loader RAM mark, stock PartnerKey restores and powers off)
 
 Every destructive run first backs up the partition table and the RAID/LVM
-metadata of the affected disk to the stick.  B/C (milestone I2) never
+metadata of the affected disk to the stick.  B/C never
 repartition: UntrashOS goes as files into /.untrash/ of a stock volume
-(slot-a/b.utslot, state.img, swap.img, bootstate); loader V602 boots from there.  ZT_INSTALLER_DRYRUN=1 only logs
+(slot-a/b.utslot, state.img, swap.img, bootstate); the loader boots from there.  ZT_INSTALLER_DRYRUN=1 only logs
 the commands; ZT_INSTALLER_TEST=1 also lists loop devices (self-tests).
 """
 import datetime
@@ -51,7 +51,7 @@ LAYOUT = [  # sgdisk, os/loader/mkgpt.sh
     ["-a", "8", "-n", "6:40:2047", "-t", "6:8300", "-c", "6:ut-bootstate"],
 ]
 MIN_DISK = 16 * 1024 ** 3
-# ways B/C: UntrashOS as files in /.untrash/ of a stock volume (loader V602)
+# ways B/C: UntrashOS as files in /.untrash/ of a stock volume
 STATE_IMG = 4 * 1024 ** 3
 SWAP_IMG = 1024 ** 3
 TARGET_MNT = "/run/untrash/target"
@@ -152,7 +152,7 @@ def stick_markers(stick):
 
 
 def stock_config_dir(stick):
-    """Stock /etc/zyxel saved on the stick, newest run first (milestone I3):
+    """Stock /etc/zyxel saved on the stick, newest run first:
     UNTRASH/<install|update>-<stamp>/etc-zyxel.tar (+ .sha256, written by the
     PartnerKey script under stock; unpacked once to RUNDIR) or an unpacked
     UNTRASH/*/etc-zyxel/ directory."""
@@ -240,7 +240,7 @@ def import_plan(cfg):
 
 def slot_source(stick):
     """System slot on the stick, UNTRASH/system/ (os/install/mk-stick-system.sh):
-    slot.utslot (head + trailer) or, before I2, slot.head.gz + slot.trailer;
+    slot.utslot (head + trailer) or the older slot.head.gz + slot.trailer;
     slot.sha256 lines "<sha256> <name>", "<bytes> slot.head.length"."""
     if not stick:
         return None
@@ -836,7 +836,7 @@ def plan(req, info):
             problems.append("Auf „%s“ sind nur %.1f GB frei, nötig sind %.1f GB." % (
                 vol["name"], vol["free"] / 1e9, need_bytes(slot, vol) / 1e9))
         if m == "B" and not info["stock_config"]:
-            problems.append("Stock-Konfiguration fehlt auf dem Stick (UNTRASH/*/etc-zyxel, Meilenstein I3).")
+            problems.append("Stock-Konfiguration fehlt auf dem Stick (UNTRASH/*/etc-zyxel).")
         if vol["degraded"]:
             problems.append("Der Verband von „%s“ ist unvollständig (%d Platte(n) gefunden); erst alle Platten "
                             "einsetzen – der Loader schreibt auf unvollständige Verbände nie." % (

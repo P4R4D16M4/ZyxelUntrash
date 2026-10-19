@@ -1,16 +1,12 @@
 From 86e8baefb9e6e149ada87efb618414f4eb4b00a3 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Sun, 18 Oct 2026 23:42:17 +0200
-Subject: [PATCH 17/17] comcerto-nand: accept the ECC state a previous kernel
- leaves after kexec
+Subject: [PATCH 17/18] mtd: comcerto-nand: accept the ECC state a previous kernel leaves
 
 The system kernel is started by kexec from the UntrashOS loader, which
 has already read the NAND.  The ECC engine is then in the read state
 this driver leaves after a clean read (gen=0x00080400, CS4, idle,
 poly=0), not in the Barebox write/generate state the probe required.
-The probe refused with -EUCLEAN, so the system kernel had no NAND:
-/proc/mtd was empty and untrash-pfe-firmware could not copy the stock
-PFE firmware from rootfs1 (r24 on hardware: no network, fallback to A).
 
 Accept exactly that state as well.  Every read step still sets read
 mode itself; the MTD stays read-only.

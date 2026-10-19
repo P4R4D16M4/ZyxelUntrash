@@ -131,7 +131,7 @@ T = {
     "Stattdessen neu starten": ("Restart instead", "Redémarrer à la place"),
     "Stock-Datenverbände": ("Stock data arrays", "Grappes de données d'origine"),
     "Stock-Konfiguration auf dem Stick": ("Stock configuration on the stick", "Configuration d'origine sur la clé"),
-    "Stock-Konfiguration fehlt auf dem Stick (UNTRASH/*/etc-zyxel, Meilenstein I3).": ("Stock configuration missing on the stick (UNTRASH/*/etc-zyxel, milestone I3).", "Configuration d'origine absente de la clé (UNTRASH/*/etc-zyxel, jalon I3)."),
+    "Stock-Konfiguration fehlt auf dem Stick (UNTRASH/*/etc-zyxel).": ("Stock configuration missing on the stick (UNTRASH/*/etc-zyxel).", "Configuration d'origine absente de la clé (UNTRASH/*/etc-zyxel)."),
     "Stock-Konfiguration nach /.untrash/stock-config; beim ersten Start übernimmt UntrashOS": ("Stock configuration to /.untrash/stock-config; on the first start UntrashOS takes over", "Configuration d'origine vers /.untrash/stock-config ; au premier démarrage UntrashOS reprend"),
     "Stock-MAC-Adressen übernommen": ("Stock MAC addresses taken over", "Adresses MAC d'origine reprises"),
     "Stock-Sicherung vorhanden (ungeprüft)": ("Stock backup present (not checked)", "Sauvegarde d'origine présente (non vérifiée)"),

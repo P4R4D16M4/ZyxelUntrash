@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the slot initrd (I2: boot a slot from a file on a stick or a stock volume).
+# Build the slot initrd (boots a slot from a file on a stick or a stock volume).
 #   mk-slot-initrd.sh MODDIR OUT.cpio.gz
 # MODDIR = lib/modules/<release> of the slot kernel (modules-staging of
 # tools/zt-build-system-kernel.sh).  Content: /init = os/loader/zt-slotinit
@@ -31,9 +31,9 @@ mod() { local p; p=$(grep -o "^[^:]*/$1\.ko[^:]*" "$MODS/modules.dep" | head -1)
 	[[ -n "$p" ]] || { echo "module $1 missing" >&2; exit 1; }; add "$p"; }
 mod watchdog; mod ls1024a_wdt
 NWDT=${#ORDER[@]}
-# nls_utf8: the system kernel mounts FAT with FAT_DEFAULT_IOCHARSET="utf8" (I2 run 2026-10-09)
+# nls_utf8: the system kernel mounts FAT with FAT_DEFAULT_IOCHARSET="utf8"
 for m in md-mod linear raid0 raid1 raid10 raid456 loop fat vfat nls_cp437 nls_iso8859-1 nls_utf8; do mod "$m"; done
-# Bays 2 and 4 sit behind the ASM1061 (PCIe x1 AHCI, V607): a stock array over
+# Bays 2 and 4 sit behind the ASM1061 (PCIe x1 AHCI): a stock array over
 # four disks only assembles once it is up.  SoC AHCI and the SerDes PHY are
 # built in; the system's untrash-pcie.service then finds both loaded.
 for m in pcie-ls1024a ahci; do mod "$m"; done

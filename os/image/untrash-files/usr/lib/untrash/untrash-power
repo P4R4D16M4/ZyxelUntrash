@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """untrash-power - power management of the board MCU like the stock firmware
-(pwrmg_main_model, rcS2, rc.shutdown; decoded 2026-10-10):
+(pwrmg_main_model, rcS2, rc.shutdown, decoded):
 
   MCU I2C bus 0, address 0x0a, register 0x0a takes a word "command, value":
     0x07 power on after power loss: 1 = power on, 0 = stay off

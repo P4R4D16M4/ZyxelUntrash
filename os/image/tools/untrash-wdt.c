@@ -1,11 +1,11 @@
 /*
  * untrash-wdt - keeps the LS1024A hardware watchdog (17 s maximum) fed.
  *
- * Until r19 systemd fed it itself (RuntimeWatchdogSec=15s).  systemd does not
- * feed it while PID 1 is busy with a daemon-reload; under load (media scan,
- * ffprobe, disk wake-up) a reload took longer than 15 s and the watchdog reset
- * the NAS (2026-10-17).  This keeper runs with real-time priority and locked
- * memory, so it keeps feeding as long as the kernel schedules anything.
+ * systemd's own RuntimeWatchdogSec is not enough: systemd does not feed the
+ * watchdog while PID 1 is busy with a daemon-reload, and under load (media
+ * scan, ffprobe, disk wake-up) a reload can take longer than 15 s.  This
+ * keeper runs with real-time priority and locked memory, so it keeps feeding
+ * as long as the kernel schedules anything.
  *
  * It still guards the system: every CHECK_S it asks systemd for a trivial
  * property ("systemctl show -p Version"); when systemd has not answered for

@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Every program the image runs must be executable (no hardware needed).
 
-2026-10-16: untrash-desk and untrash-config had lost their x bit (mode 644
-since 2026-10-10).  The PC tests call them as "python3 FILE", so nothing
-noticed until systemd on the NAS failed with 203/EXEC: no settings, no web
-interface, an aborted stock takeover.  Checked here:
+The PC tests call the programs as "python3 FILE", so a lost x bit would only
+show on the NAS (systemd 203/EXEC).  Checked here:
   - files with a #! line under usr/bin, usr/sbin, usr/lib/untrash (top level)
   - every Exec*= program of our units that lives in the image tree
   os/image/mkslot-erofs.sh runs this before it builds a slot.

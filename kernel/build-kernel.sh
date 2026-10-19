@@ -19,8 +19,8 @@ B=$ROOT/build; IN=$ROOT/inputs
 SRC=$B/linux-$KVER
 O=$B/kernel-$KIND
 MK=(make -C "$SRC" O="$O" LOCALVERSION="${ZT_LOCALVERSION-+}" ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- ZRELADDR=0x04008000 -j"$(nproc)")
-# "+" = the release string of the hardware-proven kernels (6.6.145+, built in a
-# git tree); with it the system kernel is bit-identical to them.
+# "+" = the release string 6.6.145+ (as built in a git tree); with it the
+# build is reproducible bit for bit.
 export TZ=UTC KBUILD_BUILD_USER=zt KBUILD_BUILD_HOST=zt KBUILD_BUILD_VERSION=1
 if [[ $KIND == system ]]; then
 	export SOURCE_DATE_EPOCH=1767225600 KBUILD_BUILD_TIMESTAMP="2026-01-01 00:00:00 UTC"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PC end-to-end test of installer ways B, C (I2/I3) and A, as root:
+# PC end-to-end test of installer ways B, C and A, as root:
 #   sudo test-installer-keep-host.sh TOOLROOT
 # TOOLROOT: extracted Debian mdadm/lvm2/dmsetup debs (os/loader/tests/test-zt-blk-host.sh).
 # Runs in a private mount namespace.  A synthetic stock disk (GPT p1/p2/p3,
@@ -9,9 +9,9 @@
 # untrash-installer HTTP API (plan -> start "BEHALTEN" -> job done).  Checks:
 # /.untrash content (both slots byte-identical to the stick, state.img, swap
 # signature, bootstate, stock-config, takeover-pending), user data unchanged,
-# nothing left assembled, INSTALL marker gone; then loader V602 (dry run)
+# nothing left assembled, INSTALL marker gone; then the loader (dry run)
 # boots slot file a from that volume.  The stock config comes as
-# etc-zyxel.tar(.sha256) like the PartnerKey script saves it (I3).
+# etc-zyxel.tar(.sha256) like the PartnerKey script saves it.
 # Way C on the same volume: bad password refused; new config (admin with the
 # NT hash and a SHA-512 crypt of the chosen password, one share per top-level
 # folder) staged for the importer, which plans/renders it.  Way A on a second
@@ -179,7 +179,7 @@ check "C: no stock users taken over" "! python3 -c 'import sqlite3,sys; sys.exit
 check "C: user data unchanged" "[ \$(sha256sum <$W/m/Medien/film.bin | cut -c1-64) = $DATA ]"
 umount "$W/m"; vgchange -an "vg_$U8" >/dev/null; mdadm --stop /dev/md/zt-ik >/dev/null 2>&1; sleep 1
 
-echo "--- loader V602 (dry run) on the installed volume"
+echo "--- loader (dry run) on the installed volume"
 B="$W/bin"; mkdir -p "$B"
 # the loader's own BusyBox (loader/busybox/build.sh), built for the PC
 HBB=$ROOT/build/busybox/host/busybox

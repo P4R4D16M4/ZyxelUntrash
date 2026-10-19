@@ -513,7 +513,7 @@ def main():
             check("reset: short password refused", anon.req("/api/reset-admin", {"password": "kurz"})[0] == 400)
             check("reset: admin password set without login, window closed", anon.req("/api/reset-admin", {"password": "Neu-Passwort-1"})[0] == 200
                   and anon.req("/api/state")[1]["reset_window"] == 0 and not os.path.exists(r + "/run/untrash/admin-reset"))
-            # r19 player: probe + remux stream (real ffmpeg), direct play for web formats
+            # player: probe + remux stream (real ffmpeg), direct play for web formats
             mx = r + "/i-data/aaaa0001/mixed/"
             ff = ["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc=d=2:s=160x120:r=10", "-f", "lavfi", "-i", "sine=d=2",
                   "-c:v", "libx264", "-pix_fmt", "yuv420p", "-g", "10"]
@@ -531,7 +531,7 @@ def main():
                 check("stream: no access to other shares", u.req("/api/files/stream?share=geheim&path=x.mkv")[0] in (403, 404))
             else:
                 check("ffmpeg with libx264 for the player test", False)
-            # r19 shares from existing folders (folder picker) and share links
+            # shares from existing folders (folder picker) and share links
             os.makedirs(r + "/i-data/aaaa0001/alt/Fotos/2025", exist_ok=True)
             open(r + "/i-data/aaaa0001/alt/Fotos/2025/bild.txt", "w").write("x" * 1000)
             st, d = a.req("/api/volumes/dirs?volume=aaaa0001&path=alt")
@@ -576,7 +576,7 @@ def main():
             except urllib.error.HTTPError as e:
                 gone = e.code == 404 and b"abgelaufen" in e.read()
             check("deleted link answers 404", dl == 200 and gone)
-            # r19 export: USB targets (never the UntrashOS stick), copy job runs to the end, rights
+            # export: USB targets (never the UntrashOS stick), copy job runs to the end, rights
             os.makedirs(r + "/media/usb-x", exist_ok=True)
             os.makedirs(r + "/run/untrash", exist_ok=True)
             json.dump({"sdz1": {"id": "U1", "fs": "vfat", "mnt": "/media/usb-x", "name": "Stick", "label": "DATA"},
@@ -599,13 +599,13 @@ def main():
                                                                              "target": {"usb": "U2"}})[0] == 400)
             check("export: admin removes a finished job", a.req("/api/export/cancel", {"id": ej["id"], "remove": True})[0] == 200
                   and u.req("/api/export/jobs")[1]["jobs"] == [])
-            # r19: feedback info (crashed on hardware: local name shadowed disks())
+            # feedback info (a local name must not shadow disks())
             st, fi = a.req("/api/feedback/info")
             check("feedback: info with issue address and system data", st == 200 and "/issues" in fi.get("issues", "") and fi.get("info"))
             # every admin GET answers without an internal error
             bad = [x for x in sorted(ADMIN_GETS) if a.req(x)[0] >= 500]
             check("no admin GET endpoint fails with 500 %s" % bad, not bad)
-            # r21 ad filter: off by default, switching = flag + start/stop (no daemon-reload), rules validated
+            # ad filter: off by default, switching = flag + start/stop (no daemon-reload), rules validated
             st, ab = a.req("/api/adblock")
             check("adblock: off by default, default lists", st == 200 and ab["active"] is False and ab["lists"][0]["on"])
             check("adblock: admins only", u.req("/api/adblock")[0] == 403)
@@ -629,7 +629,7 @@ def main():
             check("adblock: query log, blocked filter", st == 200 and [x["name"] for x in lg["rows"]] == ["ads.test"])
             st, ab = a.req("/api/adblock/save", {"active": False})
             check("adblock: off removes the flag", st == 200 and not os.path.exists(r + "/var/lib/untrash/adblock/enabled"))
-            # r19 media server window + broadcast channels
+            # media server window + broadcast channels
             st, m = a.req("/api/media")
             check("media: state without a running minidlna", st == 200 and m["running"] is False and "tv" in m
                   and any(x["name"] == "mixed" for x in m["shares"]))
@@ -662,7 +662,7 @@ def main():
                 closed = e.code == 401
             check("tv: closed for the home network = login needed", closed)
             check("tv: delete", a.req("/api/tv/delete", {"id": c["id"]})[0] == 200 and a.req("/api/tv")[1]["channels"] == [])
-            # r19 sounds: save, show, play on the (logged) buzzer, import a sound set, reset
+            # sounds: save, show, play on the (logged) buzzer, import a sound set, reset
             st, sd = a.req("/api/sound")
             check("sound: built-in scores listed", st == 200 and "boot" in sd["builtin"] and sd["user"] == {})
             st, sd = a.req("/api/sound/save", {"event": "boot", "notes": [[1047, 160], [0, 80], [831, 480]], "tempo": 1.5})

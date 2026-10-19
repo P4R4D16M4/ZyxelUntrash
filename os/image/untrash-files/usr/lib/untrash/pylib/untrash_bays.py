@@ -2,8 +2,8 @@
 
 Known on hardware: bay N is present when GPIO N-1 reads low (detect), its
 power is GPIO N+7 (the loader switches it on like the stock platform_init),
-and bay 1 is AHCI port 1 = ata2 (V583).  The other two bays are the ASMedia
-ASM1061 PCIe AHCI controller, hardware-proven in V607.  Mapping: fixed table
+and bay 1 is AHCI port 1 = ata2.  The other two bays are the ASMedia
+ASM1061 PCIe AHCI controller.  Mapping: fixed table
 entries first (default ata2 -> disk1, override in
 /etc/untrash/bays.json {"ata2": "disk1", "ata1.1": "disk2", ...}), then the
 other internal disks in ATA port / PMP link order onto the remaining
@@ -26,7 +26,7 @@ def link_of(sd):
     real = os.path.realpath(os.path.join(SYS, "block", sd, "device"))
     if "/usb" in real:
         return None
-    # NAS542 backplane: ASM1061 endpoint is PCI 0000:01:00.0 (V607).  Its
+    # NAS542 backplane: ASM1061 endpoint is PCI 0000:01:00.0.  Its
     # host number identifies its two SATA ports and makes ordering stable.
     if "/0000:01:00.0/" in real:
         m = re.search(r"/host(\\d+)/", real)

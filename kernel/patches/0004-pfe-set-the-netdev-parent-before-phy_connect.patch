@@ -1,12 +1,10 @@
 From c0f08be919d32fc94e64cb19dfb0273f7d6cfea1 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Thu, 8 Oct 2026 10:50:58 +0200
-Subject: [PATCH 04/16] V585b: set the vendor PFE netdev parent before
- phy_connect
+Subject: [PATCH 04/18] pfe: set the netdev parent before phy_connect
 
-V585 hardware (blackbox log): firmware load, PE init and pfe_ctrl_init
-succeed; pfe_eth_init_one -> phy_connect -> phy_attach_direct oopsed on
-the missing netdev parent (same issue as V576 in the port driver).
+phy_attach_direct() dereferences the parent of the net device;
+pfe_eth_init_one() set it only after phy_connect().
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ---

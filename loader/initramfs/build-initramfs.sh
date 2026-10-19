@@ -70,5 +70,17 @@ L="$W/list"
 	echo "dir /lib/modules/zt 755 0 0"
 	for m in "$MODDIR"/*.ko; do echo "file /lib/modules/zt/$(basename "$m") $m 644 0 0"; done
 } >"$L"
-"${GEN:?GEN=gen_init_cpio}" "$L" >"$OUT"
+# reproducible archive: every entry gets the mtime SOURCE_DATE_EPOCH (kernel
+# build: 0).  gen_init_cpio -t covers dirs, nodes and links; regular files keep
+# the mtime of their source, so they go in as copies stamped with that time.
+EPOCH=${SOURCE_DATE_EPOCH:-0}
+mkdir "$W/stage"; n=0
+while read -r t name src rest; do
+	if [[ $t == file ]]; then
+		n=$((n + 1)); cp "$src" "$W/stage/$n"; touch -d "@$EPOCH" "$W/stage/$n"
+		src=$W/stage/$n
+	fi
+	echo "$t $name $src $rest"
+done <"$L" >"$L.repro"
+"${GEN:?GEN=gen_init_cpio}" -t "$EPOCH" "$L.repro" >"$OUT"
 echo "INITRAMFS=$OUT $(sha256sum "$OUT" | cut -c1-16)"

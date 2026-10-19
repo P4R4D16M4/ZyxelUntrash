@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """PC test of pylib/untrash_bays.py (bay mapping) on fake sysfs trees:
-ata2 = bay 1 (hardware V583), detect GPIOs, PMP links, USB disks ignored,
+ata2 = bay 1, detect GPIOs, PMP links, USB disks ignored,
 table override."""
 import importlib.util
 import json
@@ -46,7 +46,7 @@ def load(W, table=None):
 AHCI = "platform/9d000000.sata/ata%d/host%d/target%d:0:0/%d:0:0:0"
 with tempfile.TemporaryDirectory() as W:
     tree(W, {"sda": AHCI % (2, 1, 1, 1), "sdb": "platform/usb/1-1/host5/target5:0:0/5:0:0:0"}, [0, 1, 1, 1])
-    check("single disk on ata2 = disk1 (V583), USB ignored", load(W).bays() == {"disk1": "/dev/sda"})
+    check("single disk on ata2 = disk1, USB ignored", load(W).bays() == {"disk1": "/dev/sda"})
 with tempfile.TemporaryDirectory() as W:
     tree(W, {"sda": AHCI % (1, 0, 0, 0), "sdb": AHCI % (2, 1, 1, 1)}, [0, 1, 0, 1])
     check("ata2 = disk1, the ata1 disk onto the other populated bay (3)", load(W).bays() == {"disk1": "/dev/sdb", "disk3": "/dev/sda"})

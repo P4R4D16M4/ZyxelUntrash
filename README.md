@@ -22,8 +22,8 @@ backup the installer made), and it updates itself with signed A/B system images.
 
 - [User guide](docs/user-guide/README.md) — installation, Desk, every app ([PDF](docs/user-guide/UntrashOS-User-Guide.pdf))
 - [Building](docs/build.md) — from source to the installer stick
-- [Hardware reference](docs/hardware/README.md) — SoC, memory map, boot chain, board peripherals and the traps, for anyone porting further
-- [Architecture](docs/architecture/untrash-os-concept.md), [stock takeover](docs/architecture/stock-takeover.md), [design system](docs/architecture/untrash-design.md)
+- [Hardware reference](docs/hardware/README.md) — SoC, memory map, boot chain, board peripherals and the pitfalls, for anyone porting further
+- [Stock takeover](docs/architecture/stock-takeover.md) — how the Zyxel configuration is taken over; [design system](docs/architecture/untrash-design.md)
 
 ## Status
 

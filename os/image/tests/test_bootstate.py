@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """untrash-bootstate on a slot-file boot (no NAS needed).
 
-2026-10-16: "prefer b" failed with its usage message on the NAS: the script
-read $2 after "set -- $STATE" had replaced the arguments with the state file.
+Regression: "prefer b" must not read $2 after "set -- $STATE" has replaced
+the arguments with the state file.
 """
 import os
 import subprocess

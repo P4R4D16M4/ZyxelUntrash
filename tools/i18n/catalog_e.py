@@ -1,4 +1,4 @@
-# UntrashOS UI catalog, part E (r19): export, share links, folder picker, feedback.
+# UntrashOS UI catalog, part E: export, share links, folder picker, feedback.
 T = {
     "1 Tag": ("1 day", "1 jour"),
     "7 Tage": ("7 days", "7 jours"),

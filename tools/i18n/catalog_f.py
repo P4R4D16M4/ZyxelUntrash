@@ -1,4 +1,4 @@
-# UntrashOS UI catalog, part F (r19): media server window, broadcast channels.
+# UntrashOS UI catalog, part F: media server window, broadcast channels.
 T = {
     "Adresse": ("Address", "Adresse"),
     "Adresse des Senders": ("Channel address", "Adresse de la chaîne"),

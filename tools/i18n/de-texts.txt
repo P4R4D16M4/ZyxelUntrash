@@ -349,7 +349,7 @@ Speichern und anwenden
 Stattdessen neu starten
 Stock-Datenverbände
 Stock-Konfiguration auf dem Stick
-Stock-Konfiguration fehlt auf dem Stick (UNTRASH/*/etc-zyxel, Meilenstein I3).
+Stock-Konfiguration fehlt auf dem Stick (UNTRASH/*/etc-zyxel).
 Stock-Konfiguration nach /.untrash/stock-config; beim ersten Start übernimmt UntrashOS
 Stock-MAC-Adressen übernommen
 Stock-Sicherung vorhanden (ungeprüft)

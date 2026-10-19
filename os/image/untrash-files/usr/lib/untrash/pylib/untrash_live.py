@@ -240,7 +240,7 @@ def terminal(handler, user, shell_cmd=None):
         return
     accept = base64.b64encode(hashlib.sha1(key.encode() + WS_GUID).digest()).decode()
     # written by hand: BaseHTTPRequestHandler answers "HTTP/1.0", and browsers
-    # refuse a WebSocket upgrade that is not "HTTP/1.1 101" (r18 on the NAS)
+    # refuse a WebSocket upgrade that is not "HTTP/1.1 101" (browsers reject anything else)
     handler.wfile.write(("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
                          "Sec-WebSocket-Accept: %s\r\n\r\n" % accept).encode())
     handler.wfile.flush()

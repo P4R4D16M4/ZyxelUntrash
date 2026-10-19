@@ -1,8 +1,7 @@
 From bbdb5d1acb083c489b4e5cbe9c10c7b85b336305 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Thu, 8 Oct 2026 10:05:15 +0200
-Subject: [PATCH 03/16] V585: vendor PFE driver (scpcom pfe_ctrl, pfe_13_00_2)
- as module
+Subject: [PATCH 03/18] pfe: vendor PFE driver (scpcom pfe_ctrl, pfe_13_00_2) as module
 
 - import drivers/pfe_ctrl and drivers/pfe from scpcom/linux ls1024a-6.1.y
   (a8447d65), Kbuild paths fixed for O= builds, -Werror dropped
@@ -464,7 +463,7 @@ index 22d153cc0..ae2df3092 100644
  #include <asm/mach/arch.h>
 +#include <asm/system_info.h>
 +
-+/* GPIO block (0x90470000, AGENTS.md trap 2) DEVICE_ID register: bits 27:24
++/* GPIO block (0x90470000, its own static mapping) DEVICE_ID register: bits 27:24
 + * hold the C2K silicon revision.  The vendor PFE driver selects its UTIL
 + * firmware by system_rev (0 = rev A0), as the stock ATAG path set it. */
 +#define COMCERTO_GPIO_DEVICE_ID	0x90470050

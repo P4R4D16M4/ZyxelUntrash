@@ -1,11 +1,10 @@
 From 6256d19a459686afe108966c4e5e24aea8a9aead Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Thu, 8 Oct 2026 18:05:15 +0200
-Subject: [PATCH 08/16] V589: pfe .shutdown stops PFE DMA before kexec/reboot
+Subject: [PATCH 08/18] pfe: .shutdown stops PFE DMA before kexec/reboot
 
-Upstream pfe_ctrl had no shutdown hook; V588 needed rmmod pfe before
-kexec -e.  Disable EGPI1/2, HGPI and HIF RX/TX DMA, then hold the PFE
-AXI reset.
+pfe_ctrl had no shutdown hook.  Disable EGPI1/2, HGPI and HIF RX/TX DMA,
+then hold the PFE AXI reset.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ---

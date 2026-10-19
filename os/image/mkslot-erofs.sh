@@ -11,7 +11,7 @@
 #
 # The manifest pins kernel, DTB, initrd and the verity root hash.  `cmdline`
 # (partition boot, no initrd) contains @SLOT@, which the loader replaces with
-# the GPT name it booted from.  `cmdline_file` (I2: slot as a file on a stick
+# the GPT name it booted from.  `cmdline_file` (slot as a file on a stick
 # or a stock volume) is used with the initrd; the loader appends untrash.src=,
 # untrash.file= and untrash.slot= (os/loader/zt-slotinit.c).
 # A slot FILE (*.utslot, mk-slotfile.sh) is the head (0 .. END) plus the
@@ -28,7 +28,7 @@
 set -Eeuo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd); ROOT=$(cd "$HERE/../.." && pwd)
 RFS=${1:?rootfs}; KB=${2:?kbuild}; VER=${3:?version}; OUT=${4:?out}; SIZE=${5:-1073741824}
-# programs without x bit only fail on the NAS (203/EXEC, 2026-10-16)
+# programs without x bit only fail on the NAS (203/EXEC)
 python3 "$HERE/tests/test_exec_bits.py" "$HERE/untrash-files" >&2 || { echo "exec bits FAILED" >&2; exit 1; }
 SEC=${ZT_SLOT_KEY:-$ROOT/inputs/keys/untrash-dev.sec}
 PROFILE=${ZT_PROFILE:-dev}; [[ $PROFILE == dev || $PROFILE == release ]] || { echo "ZT_PROFILE dev|release" >&2; exit 1; }
@@ -108,7 +108,7 @@ ln -sf /usr/lib/systemd/system/untrash-wdt.service "$W/root/etc/systemd/system/s
 # inadyn: native unit in untrash-files; the SysV script made every daemon-reload
 # run the sysv generator
 rm -f "$W/root/etc/init.d/inadyn" "$W"/root/etc/rc?.d/[SK]??inadyn
-# I2 way B: stock takeover on the first start from /.untrash
+# Way B: stock takeover on the first start from /.untrash
 mkdir -p "$W/root/etc/systemd/system/multi-user.target.wants"
 ln -sf /usr/lib/systemd/system/untrash-takeover-firstboot.service "$W/root/etc/systemd/system/multi-user.target.wants/"
 # Untrash Desk (port 80, not on the installer stick), way A data partition, SSH host keys,
@@ -125,23 +125,23 @@ done
 ln -sf /usr/lib/systemd/system/untrash-installer.service "$W/root/etc/systemd/system/multi-user.target.wants/"
 ln -sf /usr/lib/systemd/system/untrash-installer-hostname.service "$W/root/etc/systemd/system/sysinit.target.wants/"
 
-# P2-M2: mount point of the writable state (os/image/untrash-files/usr/lib/untrash/untrash-init),
+# Mount point of the writable state (os/image/untrash-files/usr/lib/untrash/untrash-init),
 # fan control (stock app_wd table) under systemd
 mkdir -p "$W/root/state"
-# chrony-wait needs PrivateUsers (no CONFIG_USER_NS in V600b) and an NTP
+# chrony-wait needs PrivateUsers (no CONFIG_USER_NS) and an NTP
 # server (none on the recovery link) -> always failed, system "degraded"
 ln -sf /dev/null "$W/root/etc/systemd/system/chrony-wait.service"
 rm -f "$W/root/etc/systemd/system/multi-user.target.wants/chrony-wait.service"
 # chrony.service and chronyd-restricted.service were both enabled (they
-# conflict; P2-M2 ended up with the restricted one): keep chrony.service
+# conflict): keep chrony.service
 rm -f "$W/root/etc/systemd/system/multi-user.target.wants/chronyd-restricted.service"
-# P2-M3: eth0 also asks DHCP; wait-online would wait 2 min and fail without a
+# eth0 also asks DHCP; wait-online would wait 2 min and fail without a
 # DHCP server (system "degraded").  Nothing here needs network-online.target.
 ln -sf /dev/null "$W/root/etc/systemd/system/systemd-networkd-wait-online.service"
 rm -f "$W/root/etc/systemd/system/network-online.target.wants/systemd-networkd-wait-online.service"
-# P2-M3: stopping agetty on ttyS0 while the console is busy wedges the CPU
-# (watchdog reset instead of power-off, reproduced with V600b..V600e).  The
-# assembled NAS has no UART access anyway.
+# Stopping agetty on ttyS0 while the console is busy wedges the CPU
+# (watchdog reset instead of power-off).  The assembled NAS has no UART
+# access anyway.
 ln -sf /dev/null "$W/root/etc/systemd/system/serial-getty@ttyS0.service"
 cp "$ROOT/build/nas-tools/zt-fan" "$W/root/usr/lib/untrash/"
 # P4 takeover (docs/architecture/stock-takeover.md): stock mount roots; foreign

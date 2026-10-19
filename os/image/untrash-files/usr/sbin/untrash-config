@@ -140,7 +140,7 @@ def load():
     except FileNotFoundError:
         return copy.deepcopy(DEFAULTS)
     wd = (raw.get("services") or {}).get("webdav")
-    if isinstance(wd, bool):            # settings before 2026-10-10: webdav and https were flags
+    if isinstance(wd, bool):            # older settings: webdav and https were flags
         raw["services"]["webdav"] = {"active": wd, "anonymous": False}
     hs = (raw.get("services") or {}).get("https")
     if isinstance(hs, bool):
@@ -662,7 +662,7 @@ def q(v):
 
 
 def render_extra(s, root, out):
-    """Services added 2026-10-10: DynDNS, mail, syslog, UPS, WebDAV."""
+    """Services: DynDNS, mail, syslog, UPS, WebDAV."""
     sv = s["services"]
     d = sv["dyndns"]
     if d["active"] and d["provider"] in DYNDNS and d["hostname"]:
@@ -892,7 +892,7 @@ UNITS = {  # setting -> systemd units
 def media_dir_used(path):
     """A media share is published only if its folder exists and holds anything
     besides hidden entries (recycle bin): stock lists every share with a media
-    type, also empty ones and ones on volumes that are gone (2026-10-16)."""
+    type, also empty ones and ones on volumes that are gone."""
     try:
         with os.scandir(path) as it:
             return any(not e.name.startswith((".", "@")) for e in it)
@@ -909,11 +909,10 @@ def sync_units(s, restart):
 
     One enable and one disable call (--no-reload) for the units whose state
     differs, then at most one daemon-reload; with restart, the wanted units
-    are (re)started and the others stopped without blocking.  Before
-    2026-10-16 every unit got its own enable/disable (= its own daemon-reload,
-    ~4 s each on the NAS) and a blocking restart: a boot took 3 minutes longer,
-    and an apply started inside the boot transaction (stock takeover) waited
-    for units ordered after itself for half an hour."""
+    are (re)started and the others stopped without blocking.  A
+    daemon-reload per unit costs ~4 s each on the NAS, and a blocking restart
+    inside the boot transaction (stock takeover) would wait for units ordered
+    after itself."""
     want = {}
     for key, on in wanted(s).items():
         for u in UNITS[key]:

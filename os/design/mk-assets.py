@@ -3,7 +3,7 @@
 
 Inputs: os/design/source/untrash-logo.png, untrash-icons.png,
 untrash-wallpaper.png.  Output: os/design/assets/.  Re-run after the source
-graphics change; the crop boxes below are measured on the 2026-10-09 versions.
+graphics change; the crop boxes below are measured on the current versions.
 """
 import os
 import sys
@@ -63,7 +63,7 @@ def icons():
 
 def status_icon():
     """"status" = the monitor tile with its pulse curve replaced by a magnifier
-    (operator 2026-10-16: no icon twice; overview keeps "monitor")."""
+    (no icon is used twice; the overview keeps "monitor")."""
     src = Image.open(os.path.join(OUT, "icons", "monitor-256.png")).convert("RGBA")
     a = np.array(src).astype(int)
     r, g, b = a[..., 0], a[..., 1], a[..., 2]

@@ -1,13 +1,11 @@
 From e9faab2bf5bda483a2b5e287cbdafd9a4b6c3bdd Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrick@heinzelbecker.com>
 Date: Fri, 9 Oct 2026 10:28:04 +0200
-Subject: [PATCH 10/16] V600e: UART0 is a DesignWare APB UART
- (snps,dw-apb-uart)
+Subject: [PATCH 10/18] NAS542: UART0 is a DesignWare APB UART (snps,dw-apb-uart)
 
-Hardware read 2026-10-09: CTR 0x44570110 ("DW"), UCV "308*".  As plain
-ns16550a the busy-detect interrupt was never acknowledged; stopping the
-serial getty while systemd wrote to the console wedged the CPU at every
-other shutdown until the watchdog reset the NAS.
+CTR reads 0x44570110 ("DW"), UCV "308*".  As plain ns16550a the
+busy-detect interrupt is never acknowledged, which can wedge the CPU
+when the console is written during shutdown.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ---

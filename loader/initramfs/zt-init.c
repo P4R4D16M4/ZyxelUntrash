@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* ZyxelUntrash V565 PID 1: mount the pseudo filesystems the stripped BusyBox
+/* UntrashOS loader PID 1: mount the pseudo filesystems the stripped BusyBox
  * 1.19 cannot mount itself, then hand over to /etc/rc.ssh. */
 #include <errno.h>
 #include <stdio.h>
@@ -13,7 +13,7 @@ static void mnt(const char *src, const char *dst, const char *type,
 {
 	mkdir(dst, 0755);
 	if (mount(src, dst, type, flags, data))
-		fprintf(stderr, "ZT-V565:MOUNT_FAIL %s %s\n", dst, strerror(errno));
+		fprintf(stderr, "ZT:MOUNT_FAIL %s %s\n", dst, strerror(errno));
 }
 
 int main(void)
@@ -28,9 +28,9 @@ int main(void)
 	mnt("devpts", "/dev/pts", "devpts", MS_NOSUID | MS_NOEXEC, "gid=5,mode=620,ptmxmode=666");
 	mnt("tmpfs", "/tmp", "tmpfs", MS_NOSUID | MS_NODEV, "mode=1777");
 	mnt("tmpfs", "/run", "tmpfs", MS_NOSUID | MS_NODEV, "mode=0755");
-	fprintf(stderr, "ZT-V565:INIT_MOUNTED\n");
+	fprintf(stderr, "ZT:INIT_MOUNTED\n");
 	execve(argv[0], argv, envp);
-	fprintf(stderr, "ZT-V565:EXEC_FAIL %s\n", strerror(errno));
+	fprintf(stderr, "ZT:EXEC_FAIL %s\n", strerror(errno));
 	for (;;)
 		pause();
 }

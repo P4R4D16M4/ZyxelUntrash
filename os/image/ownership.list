@@ -1,4 +1,4 @@
-# UntrashOS rootfs ownership fixups (P2-M2).  The unprivileged mkosi build
+# UntrashOS rootfs ownership fixups.  The unprivileged mkosi build
 # (no newuidmap) leaves every file owned by the build user; mkslot-erofs.sh
 # makes everything root:root under fakeroot, then applies
 # /var/lib/dpkg/statoverride from the image and this list.

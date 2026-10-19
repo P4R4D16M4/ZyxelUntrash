@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PC test of os/loader/zt-loader V602 (dry run: kexec is only logged), as root:
+# PC test of os/loader/zt-loader (dry run: kexec is only logged), as root:
 #   sudo test-zt-loader-host.sh TOOLROOT
 # TOOLROOT: extracted Debian mdadm/lvm2/dmsetup debs (see test-zt-blk-host.sh).
 # The loader runs under the host BusyBox with only the applets of the NAS

@@ -1,12 +1,10 @@
 From ffbf0b58c03b607ff6211e7024557d0b56144d13 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Thu, 8 Oct 2026 13:06:06 +0200
-Subject: [PATCH 07/16] V586: ls1024a_wdt without the timer reset line
+Subject: [PATCH 07/18] watchdog: ls1024a_wdt without the timer reset line
 
 The shared AXI_RTC_TIM reset request fails with -EBUSY on the NAS542 and
 the timer block is already running (clocksource); make it optional.
-Hardware 2026-10-08: feeding keeps the NAS up, killing the feeder resets
-it after the 10 s timeout.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ---

@@ -4,7 +4,7 @@
 # --install also creates the marker UNTRASH/INSTALL: the loader then boots the
 # installer from the stick; the installer removes the marker when a way is done.
 # Files:
-#   slot.utslot   slot FILE (I2): head (bytes 0 .. END) + trailer (last 8 KiB of
+#   slot.utslot   slot FILE: head (bytes 0 .. END) + trailer (last 8 KiB of
 #                 the slot image, signed manifest).  The loader boots it from the
 #                 stick (installer) or from /.untrash on a stock volume; the
 #                 installer writes head and trailer to ut-sys-a/b or copies it.
@@ -21,7 +21,7 @@ END=$(( dtb_off + dtb_len ))
 VER=$(sed -n 's/^version=//p' "$LOG" | head -1)
 [[ -n "$VER" ]] || VER=$(basename "$IMG" .img)
 mkdir -p "$OUT"
-rm -f "$OUT/slot.head.gz" "$OUT/slot.trailer"	# format before I2
+rm -f "$OUT/slot.head.gz" "$OUT/slot.trailer"	# older format
 { head -c "$END" "$IMG"; tail -c 8192 "$IMG"; } >"$OUT/slot.utslot"
 { echo "$(sha256sum <"$OUT/slot.utslot" | cut -d' ' -f1) slot.utslot"
   echo "$(head -c "$END" "$IMG" | sha256sum | cut -d' ' -f1) slot.head"

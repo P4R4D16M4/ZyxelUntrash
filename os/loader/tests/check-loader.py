@@ -3,21 +3,19 @@
 
   check-loader.py LOADER.uImage [--build DIR] [--ref REF.uImage] [--repo ROOT]
 
-Every rule below stands for a failure that was so far only found on the NAS,
-one hardware run per bug:
-  V602/V605  console or FAT/NLS driver missing (rc.ssh dies at the console
-             redirect, the FAT stick is invisible)
-  V608       FAT mount with the VFS flag "rw" passed as filesystem data
-  V609       initramfs rebuilt with 4 of 56 modules: no USB, AHCI, md/dm,
-             watchdog or I2C (fan), every insmod skipped silently; and no
-             device tree appended to the zImage (the kernel cannot boot)
-  V610       PCIe (ASM1061, bays 2+4) and PCI ahci loaded only in dev loaders:
-             the release loader saw 2/4 stock array members, way B fell back
-  trap 3     zreladdr / load address
+Each rule covers a failure that would otherwise only show on the NAS:
+  - console or FAT/NLS driver missing (rc.ssh dies at the console redirect,
+    the FAT stick is invisible)
+  - FAT mount with the VFS flag "rw" passed as filesystem data
+  - modules missing from the initramfs (rc.ssh skips them silently: no USB,
+    AHCI, md/dm, watchdog or I2C) or no device tree appended to the zImage
+  - PCIe (ASM1061, bays 2+4) and PCI ahci loaded only with an operator key:
+    the release loader would see 2/4 stock array members
+  - zreladdr / load address
 The loader's own initramfs is extracted from the uImage itself (not from a
 cpio file next to it), so the check sees exactly what NAND will boot.
 --build DIR  the kernel build dir: .config (built-in or module) and zreladdr
---ref        a hardware-proven loader: module set must not shrink
+--ref        a known-good loader: module set must not shrink
 Exit 0 = all checks passed; every failure is printed.
 """
 import argparse, os, re, struct, sys, zlib
@@ -37,7 +35,7 @@ NEEDED = {
     'usbcore': 'USB', 'xhci-hcd': 'USB_XHCI_HCD', 'xhci-plat-hcd': 'USB_XHCI_PLATFORM',
     'dwc3': 'USB_DWC3', 'phy-ls1024a-usb3': None, 'usb-storage': 'USB_STORAGE',
     'sd_mod': 'BLK_DEV_SD',
-    # FAT stick (V605)
+    # FAT stick
     'fat': 'FAT_FS', 'vfat': 'VFAT_FS',
     # SATA disks
     'phy-ls1024a-serdes': None, 'libahci': 'SATA_AHCI', 'libahci_platform': 'SATA_AHCI_PLATFORM',
@@ -57,7 +55,7 @@ FILES = ['init', 'etc/rc.ssh', 'bin/busybox', 'bin/zt-loader', 'bin/zt-mount', '
 APPLETS = ['sh', 'insmod', 'devmem', 'sha256sum', 'sed', 'grep', 'dd', 'cut', 'sort', 'wc',
            'tr', 'cat', 'ls', 'mkdir', 'sleep', 'dmesg', 'watchdog', 'sync', 'cp', 'rm']
 # VFS flags: mount(8) turns them into MS_* flags, mount(2) data must not carry
-# them (vfat: 'Unrecognized mount option "rw"', V608)
+# them (vfat: 'Unrecognized mount option "rw"')
 VFS_FLAGS = {'rw', 'defaults', 'noatime', 'nodiratime', 'relatime', 'strictatime', 'sync',
              'async', 'exec', 'noexec', 'suid', 'nosuid', 'dev', 'nodev', 'remount', 'bind',
              'auto', 'noauto', 'user', 'nouser'}
@@ -157,7 +155,7 @@ def main():
     ver = re.search(rb'Linux version (\S+)', vm)
     kver = ver.group(1).decode() if ver else '?'
     ok(f'kernel {kver}')
-    # appended DTB (V609): the FDT must end exactly at the end of the payload
+    # appended DTB: the FDT must end exactly at the end of the payload
     pl = u['payload']; i = pl.rfind(b'\xd0\x0d\xfe\xed')
     tot = struct.unpack_from('>I', pl, i + 4)[0] if i >= 0 else 0
     if i < 0 or i + tot != len(pl):
@@ -194,9 +192,9 @@ def main():
     if a.build:
         for c in BUILTIN:
             (ok if cfg.get(c) == 'y' else fail)(f'CONFIG_{c}=y (have {cfg.get(c, "unset")})')
-        if cfg.get('AUTO_ZRELADDR') == 'y': fail('CONFIG_AUTO_ZRELADDR=y (trap 3)')
+        if cfg.get('AUTO_ZRELADDR') == 'y': fail('CONFIG_AUTO_ZRELADDR=y')
         cmd = os.path.join(a.build, 'arch/arm/boot/compressed/.vmlinux.cmd')
-        (ok if os.path.exists(cmd) and '--defsym zreladdr=0x04008000' in open(cmd).read() else fail)('zreladdr=0x04008000 in .vmlinux.cmd (trap 3)')
+        (ok if os.path.exists(cmd) and '--defsym zreladdr=0x04008000' in open(cmd).read() else fail)('zreladdr=0x04008000 in .vmlinux.cmd')
         src = cfg.get('INITRAMFS_SOURCE', '')
         if src and os.path.exists(src):
             (ok if open(src, 'rb').read().rstrip(b'\0') == ird.rstrip(b'\0') else warn)(f'INITRAMFS_SOURCE {os.path.basename(src)} equals the embedded initramfs')
@@ -216,7 +214,7 @@ def main():
         if m in mods or m in builtin: continue
         if cfg and c and cfg.get(c) == 'y': continue
         fail(f'needed module {m}.ko missing' + (f' and CONFIG_{c} is not =y' if cfg and c else ''))
-    # FAT defaults (trap 9): codepage and iocharset must be loadable
+    # FAT defaults: codepage and iocharset must be loadable
     if cfg and cfg.get('FAT_FS') in ('y', 'm'):
         for nls in (f'nls_cp{cfg.get("FAT_DEFAULT_CODEPAGE", "437")}', 'nls_' + cfg.get('FAT_DEFAULT_IOCHARSET', 'iso8859-1')):
             sym = 'NLS_' + nls[4:].upper().replace('-', '_').replace('CP', 'CODEPAGE_')
@@ -237,7 +235,7 @@ def main():
     msg = f'every module rc.ssh loads is present ({len(listed)} named){": missing " + " ".join(skipped) if skipped else ""}'
     (fail if hard else warn if skipped else ok)(msg + ('' if hard or not skipped else ' (built in? pass --build)'))
 
-    # disk drivers must not sit inside an operator-key-only block (V610)
+    # disk drivers must not sit inside an operator-key-only block
     rl = rc.splitlines()
     for i, line in enumerate(rl):
         m = re.search(r'\$M/(pcie-ls1024a|ahci|ahci_platform|libahci)\.ko', line)
@@ -254,7 +252,7 @@ def main():
                     if '$DEV = 1' in t: gate = j + 1; break
                 else: depth -= 1
         if gate: fail(f'etc/rc.ssh:{i + 1}: {m.group(1)}.ko only loaded with an operator key (if at line {gate}): release loader misses disks')
-    # zt-mount option lint (V608) in every shell script of the initramfs
+    # zt-mount option lint in every shell script of the initramfs
     for n, e in sorted(fs.items()):
         d = e['data']
         if (e['mode'] & 0o170000) != 0o100000 or not d.startswith(b'#!'): continue
@@ -277,7 +275,7 @@ def main():
     if os.path.exists(repo_ldr) and 'bin/zt-loader' in fs:
         (ok if fs['bin/zt-loader']['data'] == open(repo_ldr, 'rb').read() else warn)('bin/zt-loader equals os/loader/zt-loader')
 
-    # regression against a hardware-proven loader
+    # regression against a known-good loader
     if a.ref:
         r = uimage(a.ref); rv = kernel_image(r['payload']); rf = cpio(find_initramfs(rv) or b'')
         rmods = {os.path.basename(n)[:-3] for n in rf if n.endswith('.ko')}

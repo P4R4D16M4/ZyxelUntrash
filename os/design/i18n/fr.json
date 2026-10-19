@@ -692,7 +692,7 @@
 "Stock-Datenverbände": "Grappes de données d'origine",
 "Stock-Konfiguration": "Configuration d'origine",
 "Stock-Konfiguration auf dem Stick": "Configuration d'origine sur la clé",
-"Stock-Konfiguration fehlt auf dem Stick (UNTRASH/*/etc-zyxel, Meilenstein I3).": "Configuration d'origine absente de la clé (UNTRASH/*/etc-zyxel, jalon I3).",
+"Stock-Konfiguration fehlt auf dem Stick (UNTRASH/*/etc-zyxel).": "Configuration d'origine absente de la clé (UNTRASH/*/etc-zyxel).",
 "Stock-Konfiguration nach /.untrash/stock-config; beim ersten Start übernimmt UntrashOS": "Configuration d'origine vers /.untrash/stock-config ; au premier démarrage UntrashOS reprend",
 "Stock-Konfiguration nach /.untrash/stock-config; beim ersten Start übernimmt UntrashOS Benutzer, Gruppen, Freigaben und SMB-Passwörter": "Configuration d'origine vers /.untrash/stock-config ; au premier démarrage UntrashOS reprend utilisateurs, groupes, partages et mots de passe SMB",
 "Stock-MAC-Adressen übernommen": "Adresses MAC d'origine reprises",

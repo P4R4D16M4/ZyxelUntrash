@@ -1,7 +1,7 @@
 [Unit]
 Description=UntrashOS: enable PCIe ASM1061 storage after PFE startup
-# PCIe before the PFE firmware handoff broke RX in V578.  V607 proved this
-# exact ordering: PFE first, then PCIe root port, then generic PCI AHCI.
+# PCIe before the PFE firmware handoff breaks RX.  Order: PFE first, then
+# the PCIe root port, then generic PCI AHCI.
 After=systemd-modules-load.service network.target
 Before=untrash-data.service untrash-zyxel.service
 Wants=network.target

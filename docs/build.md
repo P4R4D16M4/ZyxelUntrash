@@ -59,9 +59,9 @@ make kernel              # build/kernel-system: zImage, DTB, modules
 make busybox             # build/busybox: static BusyBox 1.37 for the loader (+ a PC build for tests)
 make loader              # build/loader.uImage (NAND loader) + offline contract check
 make rootfs              # build/image/untrash-rootfs: Debian 13 armhf
-make slot RELEASE=r1     # build/slot-r1.img: erofs + dm-verity, signed
-make update RELEASE=r1   # build/untrash-r1-update.utslot for Desk -> Updates
-make stick RELEASE=r1    # build/untrash-stick-r1.img: installer stick for a new NAS
+make slot RELEASE=1.0    # build/slot-1.0.img: erofs + dm-verity, signed
+make update RELEASE=1.0  # build/untrash-1.0-update.utslot for Desk -> Updates
+make stick RELEASE=1.0   # build/untrash-stick-1.0.img: installer stick for a new NAS
 ```
 
 The release profile has no SSH host keys (the NAS creates its own), no

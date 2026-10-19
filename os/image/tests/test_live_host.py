@@ -96,7 +96,7 @@ def main():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
 
     s, (head, rest) = ws_connect(port, origin="http://127.0.0.1:%d" % port)
-    # browsers accept only "HTTP/1.1 101" (r18: Firefox closed at once on HTTP/1.0)
+    # browsers accept only "HTTP/1.1 101" (Firefox closes at once on HTTP/1.0)
     check("terminal: HTTP/1.1 101 Switching Protocols", head.startswith(b"HTTP/1.1 101 "))
     ws_send_text(s, {"t": "r", "c": 101, "r": 33})
     ws_send_text(s, {"t": "i", "d": "stty size; echo UT$((40+2))\n"})

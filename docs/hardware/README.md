@@ -1,9 +1,9 @@
 # Zyxel NAS542 — hardware reference
 
-Everything UntrashOS learned about the NAS542 while replacing its firmware:
-SoC, memory and register map, boot chain, flash layout, board peripherals and
-the traps that cost hardware runs.  It is meant to save a successor project
-(another kernel generation, another distribution) the reverse-engineering.
+The NAS542 as UntrashOS uses it: SoC, memory and register map, boot chain,
+flash layout, board peripherals and the pitfalls of the platform.  It is meant
+to save a successor project (another kernel generation, another distribution)
+the reverse-engineering.
 
 Facts carry their evidence: `[HW]` observed on the NAS, `[DUMP]` taken from the
 stock flash/firmware, `[DEC]` from disassembling stock binaries, `[DERIVED]`
@@ -45,7 +45,7 @@ single features.  The device tree is `arch/arm/boot/dts/mindspeed/zyxel-nas542.d
 | PCIe root port | `0x98000000` | ASM1061 behind it, see §5 `[HW]` |
 | PFE CBUS (host view) | `0x9c000000` (16 MiB) | `apb 0x90500000`, `iram 0x83000000`, `ipsec 0x9a000000`, IRQ `hif` = GIC SPI 4 `[HW]/[DUMP]` |
 
-**Trap: there is no uniform virtual→physical I/O offset.**  Each block has its
+**Pitfall: there is no uniform virtual→physical I/O offset.**  Each block has its
 own static mapping in the stock kernel (`0x96500000`→`0xC0808000`,
 `0x90498000`→`0xC080A000`, `0xf0970000`→`0x90470000`).  Assuming one offset
 put GPIO at a wrong address and caused an external abort.  Cross-check every
@@ -104,7 +104,7 @@ the stick, write of the loader into `kernel2`, read-back verification.
   **maximum timeout ~17 s** (32-bit counter at 250 MHz).  It stays armed across
   kexec; feed it early (the loader's BusyBox `watchdog`, `untrash-init` until
   `exec systemd`, then `untrash-wdt`).  `[HW]`
-- **Trap:** systemd does not feed the watchdog while PID 1 is busy with a
+- **Pitfall:** systemd does not feed the watchdog while PID 1 is busy with a
   `daemon-reload`.  Under load a reload took >15 s and reset the NAS.  UntrashOS
   therefore feeds it from a real-time process (`os/image/tools/untrash-wdt.c`)
   and keeps only the reboot watchdog in systemd.  `[HW]`
@@ -187,7 +187,7 @@ firmware byte for byte.
 - The PFE must stop its DMA before kexec/reboot (patch 0008).  The stock
   `pfe.ko` itself cannot be loaded under 6.6 (163 unresolved symbols).
 
-## 8. Software traps (each one cost hardware runs)
+## 8. Software pitfalls
 
 1. `zreladdr` **must** be `0x04008000`, uImage load/entry `0x0f008000`; never
    enable `CONFIG_AUTO_ZRELADDR`; always `ARCH=arm`.

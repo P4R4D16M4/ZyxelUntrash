@@ -43,7 +43,7 @@ loader: nas-tools busybox
 	$(MAKE) check-loader
 
 # Offline contract check of the NAND loader: appended DTB, modules and their
-# deps, console/FAT drivers, rc.ssh module list, zt-mount options (AGENTS trap 10)
+# deps, console/FAT drivers, rc.ssh module list, zt-mount options
 check-loader:
 	python3 os/loader/tests/check-loader.py $(B)/loader.uImage --build $(B)/kernel-loader $(if $(LOADER_REF),--ref $(LOADER_REF))
 

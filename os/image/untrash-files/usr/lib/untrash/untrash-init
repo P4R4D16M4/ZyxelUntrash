@@ -1,5 +1,5 @@
 #!/bin/sh
-# untrash-init -- UntrashOS stage before systemd (P2-M2), kernel `init=`.
+# untrash-init -- UntrashOS stage before systemd, kernel `init=`.
 #
 # The root is erofs on dm-verity (read-only).  This makes the system writable
 # before PID 1 becomes systemd, without an initramfs:
@@ -13,13 +13,13 @@
 # The loader hands over through kexec with the LS1024A watchdog armed (17 s
 # hardware maximum).  systemd only takes it over once systemd-modules-load has
 # loaded ls1024a_wdt (~5 s after exec), so slow steps here (first-boot mkfs,
-# e2fsck) reset the NAS (P2-M2 slot v2).  untrash-init therefore loads the
+# e2fsck) would reset the NAS.  untrash-init therefore loads the
 # driver itself and pings it (open/write/close, no magic close = keeps
 # running) every 2 s until right before exec systemd.
 # Any failure in 1-4 falls back to a tmpfs under /state ("volatile"): the
 # system still boots and stays reachable, it just forgets its changes.
 # Messages go to /dev/kmsg (prefix UNTRASH-INIT:), so the blackbox sees them.
-# I2 slot FILE boot (os/loader/zt-slotinit.c ran first and left
+# Slot FILE boot (os/loader/zt-slotinit.c ran first and left
 # /run/untrash/boot.env, container at /run/untrash/host): state and swap are
 # files in /.untrash/ of the container (state.img = ext4 image on a loop
 # device, swap.img = swap file); without them (installer stick) the state is

@@ -6,7 +6,7 @@
 # kexec.  The rescue SSH stays reachable the whole time; `touch /tmp/zt-stay`
 # within the grace period keeps the loader in rescue mode.
 #
-# Where slots come from, in this order (V602, installer milestone I2):
+# Where slots come from, in this order:
 #   1. installer stick (FAT, UNTRASH/INSTALL + UNTRASH/system/slot.utslot)
 #   2. GPT partitions ut-sys-a / ut-sys-b (way A; boot state in ut-bootstate)
 #   3. slot files /.untrash/slot-{a,b}.utslot on a stock volume (ways B/C:
@@ -34,7 +34,7 @@
 # Barebox memcmp and skips the loader, so the unchanged stock boot follows;
 # the stock firmware runs the PartnerKey in rollback mode (stage 2: env +
 # kernel<X> back from the backup, os/install/partnerkey/usb_key_func.sh) and
-# powers off.  Linux 6.6 writes no flash here: the SPI env hangs it (V580),
+# powers off.  Linux 6.6 writes no flash here: the SPI env hangs it,
 # the NAND driver is read-only.  A second stage-1 run for the same request
 # means the mark did not work: ROLLBACK_FAILED, normal boot.
 #
@@ -150,16 +150,16 @@ if [ "$STAGE" = system ]; then
 	exit 0
 fi
 
-log "START V612 grace=${GRACE}s (touch /tmp/zt-stay to stay in rescue)"
+log "START grace=${GRACE}s (touch /tmp/zt-stay to stay in rescue)"
 i=0
 while [ $i -lt "$GRACE" ]; do
 	[ -f /tmp/zt-stay ] && { log "STAY requested, rescue mode"; exit 0; }
 	sleep 1; i=$((i+1))
 done
 
-# V602c: md/raid, dm, loop and FAT are modules (/lib/modules/zt), loaded only
-# now, after SSH and the grace period (V578 rule; built in, V602b never came
-# up).  Each insmod is logged first, so a hang names its module.
+# md/raid, dm, loop and FAT are modules (/lib/modules/zt), loaded only now,
+# after SSH and the grace period (built in, the loader does not come up).
+# Each insmod is logged first, so a hang names its module.
 for m in md-mod linear raid0 raid1 raid10 async_tx raid6_pq xor async_memcpy async_xor \
 	 async_pq async_raid6_recov libcrc32c raid456 dm-mod loop fat vfat nls_cp437 nls_iso8859-1; do
 	f=/lib/modules/zt/$m.ko
@@ -210,7 +210,7 @@ try_slot2() {
 			{ log "SLOT $1 (slot-2) has no initrd/cmdline_file, cannot boot from a file"; return 1; }
 		cmd="$(m cmdline_file) $4"
 		log "SLOT $1 $2 version=$(m version) verity=$(m verity_root | cut -c1-16) verified, kexec load (file)"
-		# V602e: kexec placement (kernel/initrd/DTB) into the kernel log
+		# kexec placement (kernel/initrd/DTB) into the kernel log
 		kexec -d -l $R/kernel --dtb=$R/dtb --initrd=$R/initrd --command-line="$cmd" >/tmp/zt-kexec.log 2>&1 ||
 			{ log "SLOT $1 kexec load failed"; tail -5 /tmp/zt-kexec.log; return 1; }
 		grep -E "initrd|segment|Resulting|kernel|dtb" /tmp/zt-kexec.log | head -24 |
@@ -251,7 +251,7 @@ go() {	# $1 = what is started; kexec loaded
 	log "KEXEC $1"
 	sync
 	if [ "${ZT_LOADER_DRY:-0}" = 1 ]; then echo "zt-kexec -e ($1)" >>/tmp/zt-loader-dry.log; exit 0; fi
-	zt-kexec -e		# device_shutdown stops PFE DMA (pfe .shutdown, V589)
+	zt-kexec -e		# device_shutdown stops PFE DMA (pfe .shutdown)
 	log "KEXEC returned"
 	exit 1
 }
@@ -487,10 +487,9 @@ while [ $i -lt "${ZT_LOADER_DISKWAIT:-40}" ]; do
 	else same=0; fi
 	last=$now; sleep 1; i=$((i+1))
 done
-# 2026-10-17: after a watchdog (warm) reset the bay-1 disk was not ready in
-# time (ata1 link down after 22 s), the linear stock array stayed at 3/4 and
-# the loader fell back to the stick installer / rescue without network.  A
-# missing member: re-probe every SATA/SCSI port (libata: link reset) and wait
+# After a watchdog (warm) reset the bay-1 disk may not be ready in time
+# (ata1 link down after 22 s): the stock array would stay incomplete and the
+# loader would fall back to the stick installer / rescue.  A missing member: re-probe every SATA/SCSI port (libata: link reset) and wait
 # again, up to $MDROUNDS x $MDWAIT s; then go on as before (a disk that is
 # really gone must not keep the NAS from booting a degraded raid1).
 SCSI=${ZT_LOADER_SCSI:-/sys/class/scsi_host}

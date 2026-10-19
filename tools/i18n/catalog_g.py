@@ -1,4 +1,4 @@
-# UntrashOS UI catalog, part G (r21): ad filter (DNS, dnsmasq).
+# UntrashOS UI catalog, part G: ad filter (DNS, dnsmasq).
 T = {
     "Werbefilter": ("Ad filter", "Filtre publicitaire"),
     "Werbefilter eingeschaltet": ("Ad filter on", "Filtre publicitaire activé"),

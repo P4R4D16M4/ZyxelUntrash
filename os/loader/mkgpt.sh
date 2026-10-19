@@ -3,8 +3,8 @@
 #   mkgpt.sh SECTORS OUTDIR
 # Writes OUTDIR/gpt-head.bin (LBA 0..33), OUTDIR/gpt-tail.bin (last 33 LBAs)
 # and OUTDIR/layout.txt.  The NAS writes head/tail with dd after checking the
-# disk size (no partitioning tool needed in the BusyBox 1.19 initramfs).
-# Layout (docs/architecture/untrash-os-concept.md §4): ut-sys-a 1 GiB,
+# disk size (no partitioning tool needed in the loader initramfs).
+# Layout: ut-sys-a 1 GiB,
 # ut-sys-b 1 GiB, ut-state 4 GiB, ut-swap 1 GiB, ut-data rest; partition 6
 # ut-bootstate (sectors 40..2047, raw, loader boot counters) uses the gap
 # before the 1 MiB-aligned partitions, so adding it leaves 1..5 untouched.

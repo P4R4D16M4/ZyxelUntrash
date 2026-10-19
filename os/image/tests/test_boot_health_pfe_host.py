@@ -98,7 +98,7 @@ def main():
                   sorted(os.listdir(cache)) == ["class_c2000.elf", "tmu_c2000.elf", "util_c2000.elf", "util_c2000_revA0.elf"])
             check("log on the state", "copied from the stock kernel" in open(cache + ".log").read())
             check("cached set used without a source", pfe("/nonexistent", cache, fwp) == 0)
-            # r24/r26 on hardware: rootfs1 does not contain the firmware
+            # rootfs1 does not contain the firmware, only the stock kernel does
             check("a stock rootfs instead of the kernel is refused",
                   pfe(os.path.join(ROOT, "inputs", "test", "stock-rootfs"), os.path.join(w, "cr"), os.path.join(w, "fpr")) != 0)
             broken = os.path.join(w, "broken.uImage")

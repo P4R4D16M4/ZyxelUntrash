@@ -1,8 +1,7 @@
 From 9544ed4b819c7a63030dca40f4ddedea5f654180 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Sun, 18 Oct 2026 20:02:11 +0200
-Subject: [PATCH 15/16] V600j: SerDes CMU enable for PCIe (ASM1061, bays 2+4),
- DT for buzzer and PCIe
+Subject: [PATCH 15/18] ls1024a: SerDes CMU enable for PCIe (ASM1061), DT for buzzer and PCIe
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ---

@@ -60,7 +60,7 @@ static int mcu_read(int fd, uint8_t reg)
 	return d.byte;
 }
 
-/* Desk status (2026-10-16): last reading, written atomically, best effort. */
+/* Desk status: last reading, written atomically, best effort. */
 static void state_write(int t, int rpm, int lvl)
 {
 	FILE *f = fopen("/run/untrash/fan.json.tmp", "w");

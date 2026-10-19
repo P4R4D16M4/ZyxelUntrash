@@ -1,4 +1,4 @@
-/* zt-slotinit -- /init of the UntrashOS slot initrd (I2: system from a slot file).
+/* zt-slotinit -- /init of the UntrashOS slot initrd (system from a slot file).
  *
  * The loader (os/loader/zt-loader) found a slot file (format untrash-slot-2,
  * compact: head + signed trailer), verified manifest, kernel, DTB and this

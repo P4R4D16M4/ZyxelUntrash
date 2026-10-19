@@ -1,11 +1,11 @@
 From 0d00f79da3117e62db872df360acaa4c30d5a354 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Thu, 8 Oct 2026 09:50:39 +0200
-Subject: [PATCH 01/16] ZyxelUntrash V583 baseline (hardware-validated
- 2026-10-08)
+Subject: [PATCH 01/18] NAS542: platform support for the LS1024A board
 
-Snapshot of all NAS542 changes on top of Linux 6.6.145 as booted in the
-V583 SATA run (artifact uImage-ram-test-v583-nasdev-hddpower).
+Device tree, clocks, reset, SATA, USB, NAND (read-only), GPIO, I2C,
+board power-off and the other NAS542 platform changes on top of
+Linux 6.6.145.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ---
@@ -10194,8 +10194,8 @@ index 000000000..ea46ab0b3
 +	writel(0x800, base + COMCERTO_PFE_TMU_QUEUES_CFG);
 +	writel(0, base + COMCERTO_PFE_TMU_CTRL);
 +	writel(0x40, base + COMCERTO_PFE_TMU_CTRL);
-+	/* V562: atomic (udelay) polls; a sleeping poll never returns with the
-+	 * jiffies-only clocksource of these RAM kernels (AGENTS.md trap 7). */
++	/* Atomic (udelay) polls; a sleeping poll never returns with the
++	 * jiffies-only clocksource of these kernels. */
 +	if (readl_poll_timeout_atomic(base + COMCERTO_PFE_TMU_CTRL, status,
 +				      status & BIT(7), 1, 1000))
 +		return -ETIMEDOUT;
@@ -10542,10 +10542,10 @@ index 000000000..89dfde36a
 +				  phys_addr_t ddr_phys, size_t ddr_size);
 +int comcerto_pfe_stock_tmu_prepare(void __iomem *base, phys_addr_t ddr_phys,
 +				    size_t ddr_size);
-+/* Staged stock pfe_hw_init() order.  The compile-time stage is intentionally
-+ * promoted only after its preceding hardware run has completed and powered
-+ * off cleanly.  It neither enables GPI packet flow nor touches HIF, GEMAC,
-+ * MDIO or NAND. */
++/* Staged stock pfe_hw_init() order, selected at compile time.
++ * It neither enables GPI packet flow nor touches HIF, GEMAC,
++ * MDIO or NAND.
++ */
 +int comcerto_pfe_stock_hw_prepare(void __iomem *axi, void __iomem *ddr,
 +				  phys_addr_t ddr_phys, size_t ddr_size);
 +void comcerto_pfe_stock_tmu_queue_contexts(void __iomem *base,

@@ -1,8 +1,7 @@
 From d9b235656c56c290a089ed309517c189e4e2b08d Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Sun, 18 Oct 2026 21:02:04 +0200
-Subject: [PATCH 16/16] pfe_ctrl: CONFIG_PFE_CTRL_FW12 for the stock
- pfe_12_00_2 firmware
+Subject: [PATCH 16/18] pfe_ctrl: CONFIG_PFE_CTRL_FW12 for the stock pfe_12_00_2 firmware
 
 The memory the driver shares with the PE firmware is laid out like
 pfe_ctrl_12_00_2 (Synology GPL source, same version as the stock Zyxel

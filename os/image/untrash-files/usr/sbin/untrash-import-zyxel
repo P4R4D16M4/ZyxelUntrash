@@ -134,7 +134,7 @@ def cmd_config_from_nand(args):
     dest = args[0] if args else die("usage: config-from-nand DEST")
     mtd = mtd_by_name("config")
     if mtd is None:
-        die('no NAND partition "config" (kernel older than V600g?)')
+        die('no NAND partition "config" (kernel without the NAND config partition?)')
     with open("/sys/class/mtd/mtd%d/flags" % mtd) as f:
         flags = int(f.read(), 0)
     if flags & 0x400:  # MTD_WRITEABLE
@@ -231,8 +231,7 @@ def assemble(a, rw):
     if dev:
         # Only a read-only array needs --readwrite.  The array that carries
         # the running system (/.untrash, assembled by the slot initrd) is
-        # already writable, and mdadm refuses it with EBUSY (2026-10-16:
-        # that stopped every stock volume from being mounted).
+        # already writable, and mdadm refuses it with EBUSY.
         if rw and md_array_state(dev) in ("readonly", "read-auto"):
             r = run(["mdadm", "--readwrite", dev], check=not holds_host(dev))
             if r.returncode != 0:
@@ -296,8 +295,8 @@ def volumes_on(mddev, read_only):
     for vg in lvm_report_names(["pvs", "--config", cfg, mddev], "pv", "vg_name"):
         run(["vgchange", "--config", lvm_config(read_only, vg), "-ay", vg])
         # an LV the slot initrd mapped itself (the running system) has no
-        # /dev/VG/LV link from udev; vgmknodes adds it (2026-10-16: "Can't
-        # lookup blockdev" stopped the whole mount)
+        # /dev/VG/LV link from udev; vgmknodes adds it (otherwise "Can't
+        # lookup blockdev" stops the mount)
         run(["vgmknodes", "--config", lvm_config(read_only, vg), vg], check=False)
         for lv in lvm_report_names(["lvs", "--config", cfg, vg], "lv", "lv_name"):
             vols.append((lv, "/dev/%s/%s" % (vg, lv), "lvm"))
@@ -730,7 +729,7 @@ def cmd_apply(args):
     if os.path.exists(STATE_FILE) and os.path.isdir(STATE_CONFIG):
         # an earlier run created users, groups and Samba passwords and recorded
         # the takeover; STATE_CONFIG is the Desk's working copy since then, so it
-        # is not compared again (r18: the comparison failed every retry)
+        # is not compared again (it differs by design)
         log("RESUME takeover: recorded in %s; users, groups and shares stay as they are" % STATE_FILE)
         r = run(["systemctl", "enable", "--now", "untrash-zyxel.service"], check=False)
         if r.returncode != 0:

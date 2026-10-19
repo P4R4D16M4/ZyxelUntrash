@@ -2982,7 +2982,7 @@ class Handler(BaseHTTPRequestHandler):
         except (OSError, sqlite3.Error, ValueError, KeyError) as e:
             self.reply(500, {"error": "%s: %s" % (type(e).__name__, e)})
         except Exception as e:  # noqa: BLE001 - any bug: answer and log, never drop the connection
-            # (2026-10-16: unanswered requests showed up as "NetworkError" in the browser)
+            # (an unanswered request shows up as "NetworkError" in the browser)
             import traceback
             sys.stderr.write("untrash-desk: %s %s failed:\n%s" % (method, self.path.split("?")[0], traceback.format_exc()))
             sys.stderr.flush()

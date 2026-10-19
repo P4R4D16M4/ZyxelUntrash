@@ -1,11 +1,10 @@
 From 5afe923823dbee5d0daed542c858cc42d72c6100 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
 Date: Mon, 19 Oct 2026 08:57:50 +0200
-Subject: [PATCH 18/18] comcerto-nand: register the stock kernel1 partition read-only
+Subject: [PATCH 18/18] mtd: comcerto-nand: register the stock kernel1 partition read-only
 
 The PE firmware of the PFE (pfe_12_00_2, lib/firmware/*_c2000*.elf) is
-only in the initramfs of the stock kernel on kernel1, not in rootfs1
-(r26 on hardware: rootfs1 mounted, no firmware found).  untrash-pfe-firmware
+in the initramfs of the stock kernel on kernel1; untrash-pfe-firmware
 reads the uImage from this partition.  Appended after config to keep the
 mtd numbers; the parent MTD stays non-writable.
 

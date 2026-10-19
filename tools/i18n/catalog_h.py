@@ -1,6 +1,5 @@
 # UntrashOS UI catalog, part H: installer plan steps, job log and problems as
-# whole sentences (found while writing the English user guide, 2026-10-18).
-# Before, only fragments matched and the English page showed mixed lines.
+# whole sentences (fragments alone would leave mixed-language lines).
 T = {
     # detail heading, buttons
     "Weg A": ("Way A", "Voie A"),

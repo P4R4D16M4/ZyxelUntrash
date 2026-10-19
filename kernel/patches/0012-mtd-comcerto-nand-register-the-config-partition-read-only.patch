@@ -1,12 +1,11 @@
 From 6b60fa96409162defa592028f3e47ec8e3f64fe2 Mon Sep 17 00:00:00 2001
 From: P4R4D16M4 <patrick@heinzelbecker.com>
 Date: Fri, 9 Oct 2026 12:52:45 +0200
-Subject: [PATCH 12/16] V600g: register the stock NAND config partition
- read-only
+Subject: [PATCH 12/18] mtd: comcerto-nand: register the stock config partition read-only
 
-The UntrashOS takeover importer reads /etc/zyxel (UBI volume ubi_config,
-UBIFS) from NAND offset 0, 10 MiB.  The parent MTD stays non-writable, so
-UBI attaches it in ro_mode like rootfs1 in the loaders.
+The takeover importer reads /etc/zyxel (UBI volume ubi_config, UBIFS)
+from NAND offset 0, 10 MiB.  The parent MTD stays non-writable, so UBI
+attaches it in ro_mode.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ---

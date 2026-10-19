@@ -173,7 +173,7 @@ function desk(st) {
 }
 // polling: never a second request while the first is still open.  Browsers
 // allow 6 connections per server; slow answers that piled up blocked every
-// other request, also uploads (r19, 2026-10-17).
+// other request, also uploads.
 function single(fn) { let busy = false; return async (...a) => { if (busy) return; busy = true; try { return await fn(...a); } finally { busy = false; } }; }
 async function raidPill() {
   try {
@@ -314,7 +314,7 @@ VIEWS.files = async b => {
   let r = null;
   if (FS.share) {
     // an error (folder gone meanwhile, no access) stays in the main area: the
-    // share list remains usable (2026-10-16: the whole window was replaced)
+    // share list remains usable
     try { r = await api('files?' + new URLSearchParams({ share: FS.share, path: FS.path })); }
     catch (e) { main = `<div class="ut-callout ut-callout--danger">${esc(FS.share)}: ${esc(e.message)}</div>`; }
   }

@@ -33,8 +33,8 @@ else
 fi
 [ -n "$tmp" ] && { umount "$tmp"; rmdir "$tmp"; }
 if [ -s "$OUT/authorized_keys" ] && [ "${ZT_SK_NOSSH:-0}" != 1 ]; then
-	# --no-block: a blocking start from a boot unit can wait for itself (r17
-	# had Before=ssh.service here: ssh never started).  untrash-config keeps
+	# --no-block: a blocking start from a boot unit can wait for itself (with
+	# Before=ssh.service ssh would never start).  untrash-config keeps
 	# ssh on while these keys exist, whatever the SSH setting says.
 	systemctl start --no-block ssh.service || log "ssh.service did not start"
 fi

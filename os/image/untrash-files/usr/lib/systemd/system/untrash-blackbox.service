@@ -4,7 +4,7 @@ Description=UntrashOS blackbox (kernel log to a ZTBLACKBOX1 USB stick)
 # with '@', so systemd-shutdown's final kill spares it (root-storage-daemon
 # convention) and the log covers the shutdown up to the power-off syscall.
 # Root slice: system.slice is stopped early in the shutdown and would take
-# the blackbox with it (P2-M3 finding).
+# the blackbox with it.
 DefaultDependencies=no
 After=systemd-udevd.service
 Before=sysinit.target
