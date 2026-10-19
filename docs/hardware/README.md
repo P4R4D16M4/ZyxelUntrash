@@ -164,17 +164,24 @@ firmware byte for byte.
 
 - The stock firmware is **pfe_12_00_2** (with stock driver
   `pfe_ctrl_12_00_2`; GPL source of that version: Synology,
-  github.com/scpcom/linux branch `dsgpl-3.2.y-comcerto2k`).  It is in the stock
-  root file system (NAND `rootfs1`, UBI volume `rootfs`, `/lib/firmware`) and in
-  the stock kernel's initramfs (`kernel1`), on every NAS542.
+  github.com/scpcom/linux branch `dsgpl-3.2.y-comcerto2k`).  It is only in the
+  initramfs of the stock kernel (NAND `kernel1`: uImage, zImage with a gzip
+  kernel image that carries the initramfs as a second gzip stream,
+  `lib/firmware/*_c2000*.elf`), on every NAS542.  The stock root file system
+  (NAND `rootfs1`, UBI volume `ubi_rootfs1`) does **not** contain it `[HW]`.
 - pfe_13 adds three `resume` words, a GRE tunnel cache and a bigger tunnel
   context (352 instead of 328 bytes); everything behind them moves.
   `CONFIG_PFE_CTRL_FW12` (patch 0016) restores the pfe_12 layout;
   `tools/pfe/check-fw12-layout.py` compares a built `pfe.ko` with the stock
   `pfe.ko` (whose symbol table survived) section by section.
-- UntrashOS copies the stock set once from `rootfs1` to `/state/firmware/pfe`
-  (`untrash-pfe-firmware`, before udev loads the driver) and accepts only
-  version `pfe_12_00_2` with the expected `.dmem_sh` sizes.
+- UntrashOS extracts the stock set once from `kernel1` to `/state/firmware/pfe`
+  (`untrash-pfe-firmware` + `untrash-pfe-extract`, before the driver loads;
+  log in `/state/firmware/pfe.log`) and accepts only version `pfe_12_00_2`
+  with the expected `.dmem_sh` sizes `[HW]`.
+- The system kernel is started by kexec from the loader, which has read the
+  NAND already: the ECC engine is then in the read state, not in the Barebox
+  write/generate state.  The NAND driver accepts exactly that state (patch
+  0017); before it, the system kernel had no NAND at all `[HW]`.
 - The PFE must stop its DMA before kexec/reboot (patch 0008).  The stock
   `pfe.ko` itself cannot be loaded under 6.6 (163 unresolved symbols).
 

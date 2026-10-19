@@ -146,7 +146,7 @@ for n in 0 1; do
 	log "eth$n MAC from the stock env"
 done
 
-# PFE PE firmware from the NAS's own stock firmware (NAND rootfs1), cached on
+# PFE PE firmware from the NAS's own stock kernel (NAND kernel1), cached on
 # the state; must happen before udev loads pfe.ko (untrash-pfe-firmware)
 /usr/lib/untrash/untrash-pfe-firmware /state/firmware/pfe || log "no PFE firmware: no network"
 

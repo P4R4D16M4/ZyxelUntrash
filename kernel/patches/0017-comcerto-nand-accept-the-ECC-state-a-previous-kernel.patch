@@ -1,0 +1,50 @@
+From 86e8baefb9e6e149ada87efb618414f4eb4b00a3 Mon Sep 17 00:00:00 2001
+From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
+Date: Sun, 18 Oct 2026 23:42:17 +0200
+Subject: [PATCH 17/17] comcerto-nand: accept the ECC state a previous kernel
+ leaves after kexec
+
+The system kernel is started by kexec from the UntrashOS loader, which
+has already read the NAND.  The ECC engine is then in the read state
+this driver leaves after a clean read (gen=0x00080400, CS4, idle,
+poly=0), not in the Barebox write/generate state the probe required.
+The probe refused with -EUCLEAN, so the system kernel had no NAND:
+/proc/mtd was empty and untrash-pfe-firmware could not copy the stock
+PFE firmware from rootfs1 (r24 on hardware: no network, fallback to A).
+
+Accept exactly that state as well.  Every read step still sets read
+mode itself; the MTD stays read-only.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ drivers/mtd/nand/raw/comcerto-nand.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/drivers/mtd/nand/raw/comcerto-nand.c b/drivers/mtd/nand/raw/comcerto-nand.c
+index 5ea4f5c..a437b66 100644
+--- a/drivers/mtd/nand/raw/comcerto-nand.c
++++ b/drivers/mtd/nand/raw/comcerto-nand.c
+@@ -1359,6 +1359,20 @@ static int comcerto_nand_validate_stock_ecc_state(struct platform_device *pdev,
+ 	u32 idle = readl(cn->ecc + COMCERTO_ECC_IDLE_STAT);
+ 	u32 poly = readl(cn->ecc + COMCERTO_ECC_POLY_STAT);
+ 
++	/*
++	 * After kexec from the UntrashOS loader the controller is in the state
++	 * this driver leaves after a clean read (read mode, CS4, idle, no
++	 * correction pending), not in the Barebox write/generate state.
++	 */
++	if (gen == COMCERTO_ECC_GEN_READ_1BIT_1024 &&
++	    cs == COMCERTO_ECC_CS4_SELECTED &&
++	    (idle & COMCERTO_ECC_IDLE) && !(poly & BIT(0))) {
++		dev_notice(&pdev->dev,
++			   "inherited ECC state of a previous kernel verified (read mode, CS4, idle, poly=%08x)\n",
++			   poly);
++		return 0;
++	}
++
+ 	if (gen != COMCERTO_ECC_GEN_WRITE_1BIT_1024 ||
+ 	    cs != COMCERTO_ECC_CS4_SELECTED ||
+ 	    !(idle & COMCERTO_ECC_IDLE) ||
+-- 
+2.39.5
+

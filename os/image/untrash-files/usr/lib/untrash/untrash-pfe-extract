@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+"""untrash-pfe-extract KERNEL OUTDIR  (untrash-pfe-firmware)
+
+Copies the PE firmware of the network engine (lib/firmware/*_c2000*.elf) out
+of the stock kernel: KERNEL is the NAND partition kernel1 (/dev/mtdN) or a
+copy of it.  The stock uImage (Linux 3.2.54) is a zImage whose gzip payload
+carries the initramfs as a second gzip stream (newc cpio); the firmware is
+only there, not in rootfs1.  uImage header and data CRC are checked first.
+Exit 0 when at least one *_c2000*.elf was written, 1 otherwise."""
+import os
+import struct
+import sys
+import zlib
+
+GZ = b"\x1f\x8b\x08"
+MAX = 10 * 1024 * 1024   # size of the kernel1 partition
+
+
+def fail(msg):
+    print("untrash-pfe-extract: " + msg, file=sys.stderr)
+    sys.exit(1)
+
+
+def gunzip(b, off):
+    try:
+        return zlib.decompressobj(31).decompress(b[off:])
+    except zlib.error:
+        return None
+
+
+def cpio(b):
+    """newc entries (name, data) up to TRAILER!!!"""
+    off = 0
+    while off + 110 <= len(b) and b[off:off + 6] == b"070701":
+        try:
+            fs = int(b[off + 54:off + 62], 16)
+            ns = int(b[off + 94:off + 102], 16)
+        except ValueError:
+            return
+        name = b[off + 110:off + 110 + ns - 1].decode("utf-8", "replace")
+        if name == "TRAILER!!!":
+            return
+        data_off = (off + 110 + ns + 3) & ~3
+        yield name, b[data_off:data_off + fs]
+        off = (data_off + fs + 3) & ~3
+
+
+def main():
+    if len(sys.argv) != 3:
+        fail("usage: untrash-pfe-extract KERNEL OUTDIR")
+    with open(sys.argv[1], "rb") as f:
+        hdr = f.read(64)
+        if len(hdr) < 64 or struct.unpack(">I", hdr[:4])[0] != 0x27051956:
+            fail("no uImage in %s" % sys.argv[1])
+        hcrc, size, dcrc = struct.unpack(">I", hdr[4:8])[0], struct.unpack(">I", hdr[12:16])[0], struct.unpack(">I", hdr[24:28])[0]
+        if zlib.crc32(hdr[:4] + b"\0" * 4 + hdr[8:]) != hcrc:
+            fail("uImage header CRC mismatch")
+        if not 0 < size <= MAX - 64:
+            fail("uImage size %d" % size)
+        data = f.read(size)
+    if len(data) != size or zlib.crc32(data) != dcrc:
+        fail("uImage data CRC mismatch")
+    # zImage: decompressor stub, then the gzip'd kernel image (first gzip
+    # stream that decompresses)
+    image = None
+    off = data.find(GZ)
+    while off >= 0 and image is None:
+        image = gunzip(data, off)
+        off = data.find(GZ, off + 1)
+    if not image:
+        fail("no gzip kernel image in the zImage")
+    # embedded initramfs: a gzip stream inside the image that holds a cpio
+    off = image.find(GZ)
+    while off >= 0:
+        b = gunzip(image, off)
+        if b and b.startswith(b"070701"):
+            n = 0
+            os.makedirs(sys.argv[2], exist_ok=True)
+            for name, body in cpio(b):
+                base = os.path.basename(name)
+                if os.path.dirname(name) == "lib/firmware" and "_c2000" in base and base.endswith(".elf"):
+                    with open(os.path.join(sys.argv[2], base), "wb") as o:
+                        o.write(body)
+                    n += 1
+            if n:
+                print("untrash-pfe-extract: %d firmware file(s) from %s" % (n, hdr[32:64].split(b"\0")[0].decode("ascii", "replace")))
+                return
+        off = image.find(GZ, off + 1)
+    fail("no initramfs with lib/firmware/*_c2000*.elf in the stock kernel")
+
+
+if __name__ == "__main__":
+    main()

@@ -3,22 +3,27 @@
 #
 # The network engine (PFE) of the NAS542 needs its PE firmware.  UntrashOS
 # does not ship it: every NAS542 carries the matching set (pfe_12_00_2) in its
-# own stock firmware, NAND partition rootfs1 (UBI volume "rootfs", untouched by
-# UntrashOS).  It is copied once into CACHE (default /state/firmware/pfe) and
-# the kernel firmware search path is pointed there; pfe.ko loads it later.
+# own stock firmware, in the initramfs of the stock kernel on NAND partition
+# kernel1 (untouched by UntrashOS; rootfs1 does not contain it).  It is
+# extracted once (untrash-pfe-extract) into CACHE (default
+# /state/firmware/pfe) and the kernel firmware search path is pointed there;
+# pfe.ko loads it later.
 #
 # Only a set the driver can use is accepted: version string pfe_12_00_2 and
 # the shared-memory sizes of the stock driver (CONFIG_PFE_CTRL_FW12,
-# tools/pfe/check-fw12-layout.py).  Read-only: UBI attaches rootfs1 read-only
-# (the MTD is registered non-writable).
-# Tests: ZT_PFE_SRC = a directory standing in for the mounted stock rootfs,
+# tools/pfe/check-fw12-layout.py).  Read-only: the NAND MTD is registered
+# non-writable.  The log also goes to CACHE.log on the state.
+# Tests: ZT_PFE_KERNEL = a file standing in for kernel1,
 # ZT_PFE_FWPATH = file standing in for the firmware_class path parameter.
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 D=${1:-/state/firmware/pfe}
 FWPATH=${ZT_PFE_FWPATH:-/sys/module/firmware_class/parameters/path}
-UBINUM=9
-MNT=/run/untrash-stockfs
-log() { { echo "UNTRASH-PFE: $*" >/dev/kmsg; } 2>/dev/null || echo "UNTRASH-PFE: $*"; }
+LIB=$(dirname "$0")
+log() {
+	{ echo "UNTRASH-PFE: $*" >/dev/kmsg; } 2>/dev/null || echo "UNTRASH-PFE: $*"
+	{ echo "$(date -u +%FT%TZ) $*" >>"$D.log"; } 2>/dev/null
+}
+mkdir -p "$(dirname "$D")" 2>/dev/null
 
 # .dmem_sh sizes of the pfe_12_00_2 class and util images (bytes)
 want_class=4416 want_util=1505
@@ -43,32 +48,19 @@ usable() {	# $1 = directory with *_c2000.elf
 }
 
 if ! usable "$D"; then
-	src=${ZT_PFE_SRC:-}
-	attached=
+	src=${ZT_PFE_KERNEL:-}
 	if [ -z "$src" ]; then
-		mtd=$(sed -n 's/^mtd\([0-9]*\): .* "rootfs1"$/\1/p' /proc/mtd)
-		if [ -z "$mtd" ]; then log "no NAND rootfs1: no PFE firmware"; exit 1; fi
-		if ! ubiattach -m "$mtd" -d $UBINUM -O 2048 >/dev/null 2>&1; then
-			log "ubiattach rootfs1 failed"; exit 1
-		fi
-		attached=1
-		mkdir -p $MNT
-		if mount -t ubifs -o ro ubi$UBINUM:rootfs $MNT 2>/dev/null; then src=$MNT
-		else log "mount of the stock rootfs failed"; fi
+		mtd=$(sed -n 's/^mtd\([0-9]*\): .* "kernel1"$/\1/p' /proc/mtd)
+		[ -n "$mtd" ] && src=/dev/mtd$mtd || log "no NAND kernel1: no PFE firmware"
 	fi
 	if [ -n "$src" ]; then
-		rm -rf "$D.new"; mkdir -p "$D.new"
-		cp "$src"/lib/firmware/*_c2000*.elf "$D.new/" 2>/dev/null
-		if usable "$D.new"; then
+		rm -rf "$D.new"
+		if out=$(python3 "$LIB/untrash-pfe-extract" "$src" "$D.new" 2>&1) && usable "$D.new"; then
 			rm -rf "$D"; mv "$D.new" "$D"; sync
-			log "PE firmware pfe_12_00_2 copied from the stock firmware (rootfs1)"
+			log "PE firmware pfe_12_00_2 copied from the stock kernel ($src): $out"
 		else
-			rm -rf "$D.new"; log "stock rootfs has no usable pfe_12_00_2 PE firmware"
+			rm -rf "$D.new"; log "stock kernel $src has no usable pfe_12_00_2 PE firmware: $out"
 		fi
-	fi
-	if [ -n "$attached" ]; then
-		mountpoint -q $MNT && umount $MNT
-		ubidetach -d $UBINUM >/dev/null 2>&1
 	fi
 fi
 usable "$D" || exit 1
