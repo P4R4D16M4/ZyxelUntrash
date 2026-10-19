@@ -131,8 +131,10 @@ the stick, write of the loader into `kernel2`, read-back verification.
   6 s, HD2+HD4, wait 6 s.  LEDs: `hdd1..4-green` = GPIO 48/50/52/54,
   `hdd1..4-red` = 49/51/53/55 (device tree).
 - **Two bays on the SoC AHCI, two behind an ASMedia ASM1061** (PCIe x1, 2-port
-  AHCI, `1b21:0612`) on the backplane (PCB `45-403-000031`).  Stock never got a
-  PCIe link ("PCIe0: Link Up Failed").  Linux 6.6 needs **bit 0 of `SD_CMU_CTL`
+  AHCI, `1b21:0612`) on the backplane (PCB `45-403-000031`); the stock firmware
+  drives all four bays.  On the bench without the backplane there is no PCIe
+  endpoint, so any kernel logs a failed link there ("PCIe0: Link Up Failed").
+  Linux 6.6 needs **bit 0 of `SD_CMU_CTL`
   set for PCIe too** (patch 0015); then CMU, root port and endpoint come up and
   the generic `ahci` driver serves the other two bays.  The PCIe and AHCI
   modules must be loaded by the loader **and** the slot initrd.  `[HW]`
