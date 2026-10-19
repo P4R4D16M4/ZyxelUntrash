@@ -7,8 +7,7 @@ its options. The tables list each option, its choices (the default is **bold**),
 > **About the screenshots.** The screenshots were taken on *emulated* hardware: the installer runs
 > in its dry run (commands are shown, not executed), and the Desk runs in a test mode with example
 > data. All names, addresses and files are examples (users `anna` and `ben`, network `192.0.2.x`,
-> `*.example.net`). The procedures themselves (stick installation under the Zyxel firmware, return
-> to stock, updates) have been run on real NAS542 hardware.
+> `*.example.net`).
 >
 > The guide is also built into UntrashOS: open **Manual** in the Desk, use the link on the sign-in
 > page, or the link at the top of the installer. All of them offer this guide as a PDF as well.
