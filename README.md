@@ -29,9 +29,14 @@ backup the installer made), and it updates itself with signed A/B system images.
 
 UntrashOS runs as the daily system on a NAS542 with four disks.  The images
 contain no proprietary firmware: the network firmware of the SoC (NXP PFE) is
-taken from the stock firmware already on every NAS542.  A ready-made installer
-image will be published once the source-built loader and this firmware path
-have passed their hardware test; until then you can build it yourself
+extracted on the NAS from the stock kernel already in its flash.  Everything
+on the stick is built from this repository.
+
+**Download:** the installer stick image and the update file for existing
+installations are on the [Releases](https://github.com/P4R4D16M4/ZyxelUntrash/releases)
+page.  Image writers such as balenaEtcher and Raspberry Pi Imager write the
+`.img.xz` directly; otherwise unpack it with `xz -d` first.  Then follow the
+[user guide](docs/user-guide/README.md).  You can also build the image yourself
 ([Building](docs/build.md)).
 
 ## License
