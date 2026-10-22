@@ -439,13 +439,17 @@ MAC_RE = re.compile(r"^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$")
 
 
 def device_record(info):
-    """Stock MACs of this NAS (PartnerKey device.env of the newest completed
-    install run) as the text UntrashOS reads at boot (untrash-init: way A in
-    block 1 of ut-bootstate, ways B/C in /.untrash/device.env)."""
+    """Stock MACs and stock kernel slot of this NAS (PartnerKey device.env of
+    the newest completed install run) as the text UntrashOS reads at boot
+    (untrash-init: way A in block 1 of ut-bootstate, ways B/C in
+    /.untrash/device.env).  ACTIVE_SLOT tells untrash-pfe-firmware which
+    kernel partition holds the stock kernel with the PFE firmware."""
     for b in reversed(info["backups"]):
         if b["stock"]:
             lines = ["%s=%s" % (k, b["device"].get(k, "")) for k in ("ETH0_MAC", "ETH1_MAC")
                      if MAC_RE.match(b["device"].get(k, ""))]
+            if b["device"].get("ACTIVE_SLOT") in ("1", "2"):
+                lines.append("ACTIVE_SLOT=%s" % b["device"]["ACTIVE_SLOT"])
             if lines:
                 return ("\n".join(lines) + "\n").encode()
     return None

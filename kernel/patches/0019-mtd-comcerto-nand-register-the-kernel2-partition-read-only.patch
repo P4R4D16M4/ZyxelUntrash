@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: P4R4D16M4 <patrickheinzelbecker@googlemail.com>
+Date: Thu, 22 Oct 2026 23:59:00 +0200
+Subject: [PATCH 19/19] mtd: comcerto-nand: register the stock kernel2 partition read-only
+
+The stock firmware boots from kernel1 or kernel2; the UntrashOS loader
+goes into the other one.  untrash-pfe-firmware reads the PE firmware
+from the stock slot recorded at install time (ACTIVE_SLOT), so both
+kernel partitions must be readable.  Appended after kernel1 to keep the
+mtd numbers; the parent MTD stays non-writable.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ drivers/mtd/nand/raw/comcerto-nand.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/mtd/nand/raw/comcerto-nand.c b/drivers/mtd/nand/raw/comcerto-nand.c
+--- a/drivers/mtd/nand/raw/comcerto-nand.c
++++ b/drivers/mtd/nand/raw/comcerto-nand.c
+@@ -130,6 +130,15 @@ static const struct mtd_partition comcerto_nand_v213_parts[] = {
+ 		.offset = 10 * 1024 * 1024,
+ 		.size = 10 * 1024 * 1024,
+ 	},
++	/*
++	 * The other stock kernel slot (after rootfs1); which of the two holds
++	 * the stock kernel is ACTIVE_SLOT of the install run.  Read-only.
++	 */
++	{
++		.name = "kernel2",
++		.offset = 130 * 1024 * 1024,
++		.size = 10 * 1024 * 1024,
++	},
+ };
+ 
+ static inline struct comcerto_nand *to_comcerto_nand(struct nand_chip *chip)

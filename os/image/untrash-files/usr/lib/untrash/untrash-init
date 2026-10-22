@@ -146,9 +146,11 @@ for n in 0 1; do
 	log "eth$n MAC from the stock env"
 done
 
-# PFE PE firmware from the NAS's own stock kernel (NAND kernel1), cached on
-# the state; must happen before udev loads pfe.ko (untrash-pfe-firmware)
-/usr/lib/untrash/untrash-pfe-firmware /state/firmware/pfe || log "no PFE firmware: no network"
+# PFE PE firmware from the NAS's own stock kernel (NAND kernel<ACTIVE_SLOT>,
+# the slot the loader did not go into), cached on the state; must happen
+# before udev loads pfe.ko (untrash-pfe-firmware)
+stockslot=$(echo "$devenv" | sed -n 's/^ACTIVE_SLOT=\([12]\)$/\1/p' | head -1)
+/usr/lib/untrash/untrash-pfe-firmware /state/firmware/pfe "${stockslot:-1}" || log "no PFE firmware: no network"
 
 if [ -n "$DISK" ] && SWAP=$(part_dev ut-swap "$DISK"); then
 	if empty "$SWAP"; then

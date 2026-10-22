@@ -1,10 +1,12 @@
 #!/bin/sh
-# untrash-pfe-firmware [CACHE]  (untrash-init, before systemd and udev)
+# untrash-pfe-firmware [CACHE [SLOT]]  (untrash-init, before systemd and udev)
 #
 # The network engine (PFE) of the NAS542 needs its PE firmware.  UntrashOS
 # does not ship it: every NAS542 carries the matching set (pfe_12_00_2) in its
 # own stock firmware, in the initramfs of the stock kernel on NAND partition
-# kernel1 (untouched by UntrashOS; rootfs1 does not contain it).  It is
+# kernel<SLOT>: the stock slot of the install run (ACTIVE_SLOT in device.env,
+# default 1); the loader went into the other one (rootfs1 does not contain
+# the firmware).  It is
 # extracted once (untrash-pfe-extract) into CACHE (default
 # /state/firmware/pfe) and the kernel firmware search path is pointed there;
 # pfe.ko loads it later.
@@ -13,10 +15,12 @@
 # the shared-memory sizes of the stock driver (CONFIG_PFE_CTRL_FW12,
 # tools/pfe/check-fw12-layout.py).  Read-only: the NAND MTD is registered
 # non-writable.  The log also goes to CACHE.log on the state.
-# Tests: ZT_PFE_KERNEL = a file standing in for kernel1,
+# Tests: ZT_PFE_KERNEL = a file standing in for kernel<SLOT>,
 # ZT_PFE_FWPATH = file standing in for the firmware_class path parameter.
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 D=${1:-/state/firmware/pfe}
+SLOT=${2:-1}
+case $SLOT in 1|2) ;; *) SLOT=1 ;; esac
 FWPATH=${ZT_PFE_FWPATH:-/sys/module/firmware_class/parameters/path}
 LIB=$(dirname "$0")
 log() {
@@ -50,8 +54,8 @@ usable() {	# $1 = directory with *_c2000.elf
 if ! usable "$D"; then
 	src=${ZT_PFE_KERNEL:-}
 	if [ -z "$src" ]; then
-		mtd=$(sed -n 's/^mtd\([0-9]*\): .* "kernel1"$/\1/p' /proc/mtd)
-		[ -n "$mtd" ] && src=/dev/mtd$mtd || log "no NAND kernel1: no PFE firmware"
+		mtd=$(sed -n "s/^mtd\([0-9]*\): .* \"kernel$SLOT\"\$/\1/p" /proc/mtd)
+		[ -n "$mtd" ] && src=/dev/mtd$mtd || log "no NAND kernel$SLOT: no PFE firmware"
 	fi
 	if [ -n "$src" ]; then
 		rm -rf "$D.new"
