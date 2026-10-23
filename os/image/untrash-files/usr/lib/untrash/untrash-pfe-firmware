@@ -1,12 +1,16 @@
 #!/bin/sh
-# untrash-pfe-firmware [CACHE [SLOT]]  (untrash-init, before systemd and udev)
+# untrash-pfe-firmware [CACHE [SLOT [KERNELFILE]]]  (untrash-init, before systemd and udev)
 #
 # The network engine (PFE) of the NAS542 needs its PE firmware.  UntrashOS
 # does not ship it: every NAS542 carries the matching set (pfe_12_00_2) in its
 # own stock firmware, in the initramfs of the stock kernel on NAND partition
 # kernel<SLOT>: the stock slot of the install run (ACTIVE_SLOT in device.env,
 # default 1); the loader went into the other one (rootfs1 does not contain
-# the firmware).  It is
+# the firmware).  Preferred source is KERNELFILE: the copy of that stock kernel
+# the stock firmware itself saved to the stick in the install run
+# (install-*/mtd<4|6>-before-a.bin), so the NAND is not read at all.  The
+# installer seeds the cache of the installed system, so NAND is only the
+# fallback for systems installed before.  It is
 # extracted once (untrash-pfe-extract) into CACHE (default
 # /state/firmware/pfe) and the kernel firmware search path is pointed there;
 # pfe.ko loads it later.
@@ -21,6 +25,7 @@ PATH=/usr/sbin:/usr/bin:/sbin:/bin
 D=${1:-/state/firmware/pfe}
 SLOT=${2:-1}
 case $SLOT in 1|2) ;; *) SLOT=1 ;; esac
+KFILE=${3:-}
 FWPATH=${ZT_PFE_FWPATH:-/sys/module/firmware_class/parameters/path}
 LIB=$(dirname "$0")
 log() {
@@ -53,6 +58,7 @@ usable() {	# $1 = directory with *_c2000.elf
 
 if ! usable "$D"; then
 	src=${ZT_PFE_KERNEL:-}
+	[ -z "$src" ] && [ -n "$KFILE" ] && [ -s "$KFILE" ] && src=$KFILE
 	if [ -z "$src" ]; then
 		mtd=$(sed -n "s/^mtd\([0-9]*\): .* \"kernel$SLOT\"\$/\1/p" /proc/mtd)
 		[ -n "$mtd" ] && src=/dev/mtd$mtd || log "no NAND kernel$SLOT: no PFE firmware"

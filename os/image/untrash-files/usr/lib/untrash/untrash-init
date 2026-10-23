@@ -126,12 +126,13 @@ fi
 # ut-bootstate (way A); the installer stick reads it from the stick) ->
 # .link files, applied by udev when pfe registers eth0/eth1.  Without them
 # pfe uses its built-in default, the same on every NAS.
-devenv=
+devenv=; installdir=
 if [ "$ZT_BOOT" = file ]; then
 	if [ -f "$ZT_HOST/.untrash/device.env" ]; then devenv=$(cat "$ZT_HOST/.untrash/device.env")
 	else
 		for f in "$ZT_HOST"/UNTRASH/install-*/device.env; do
-			[ -f "$f" ] && grep -q 'RESULT DONE' "${f%/device.env}/install.log" 2>/dev/null && devenv=$(cat "$f")
+			[ -f "$f" ] && grep -q 'RESULT DONE' "${f%/device.env}/install.log" 2>/dev/null &&
+				devenv=$(cat "$f") && installdir=${f%/device.env}
 		done
 	fi
 elif [ -n "$DISK" ] && BS=$(part_dev ut-bootstate "$DISK"); then
@@ -146,11 +147,19 @@ for n in 0 1; do
 	log "eth$n MAC from the stock env"
 done
 
-# PFE PE firmware from the NAS's own stock kernel (NAND kernel<ACTIVE_SLOT>,
-# the slot the loader did not go into), cached on the state; must happen
-# before udev loads pfe.ko (untrash-pfe-firmware)
+# PFE PE firmware from the NAS's own stock kernel (kernel<ACTIVE_SLOT>, the
+# slot the loader did not go into), cached on the state; must happen before
+# udev loads pfe.ko (untrash-pfe-firmware).  On the installer stick the source
+# is the copy of that kernel in the install run; the installer seeds the cache
+# of the installed system.
 stockslot=$(echo "$devenv" | sed -n 's/^ACTIVE_SLOT=\([12]\)$/\1/p' | head -1)
-/usr/lib/untrash/untrash-pfe-firmware /state/firmware/pfe "${stockslot:-1}" || log "no PFE firmware: no network"
+stockfile=
+[ -n "$installdir" ] && case $stockslot in
+	1) stockfile=$installdir/mtd4-before-a.bin ;;
+	2) stockfile=$installdir/mtd6-before-a.bin ;;
+esac
+/usr/lib/untrash/untrash-pfe-firmware /state/firmware/pfe "${stockslot:-1}" "$stockfile" ||
+	log "no PFE firmware: no network"
 
 if [ -n "$DISK" ] && SWAP=$(part_dev ut-swap "$DISK"); then
 	if empty "$SWAP"; then

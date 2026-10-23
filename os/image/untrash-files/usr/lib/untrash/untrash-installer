@@ -431,6 +431,8 @@ def do_wipe_install(req, info):
     else:
         JOB.add("Keine Stock-MAC-Adressen auf dem Stick: UntrashOS nimmt die des Treibers")
     run(["mkfs.btrfs", "-f", "-L", "ut-data", part_of(disk["path"], 5)])
+    run(["wipefs", "-a", part_of(disk["path"], 3)])   # fresh state: no leftovers of the old disk content
+    seed_state(part_of(disk["path"], 3))
     clear_install_marker(stick)
     JOB.add("Fertig: Neustart startet UntrashOS %s von %s" % (slot["version"], disk["name"]))
 
@@ -453,6 +455,37 @@ def device_record(info):
             if lines:
                 return ("\n".join(lines) + "\n").encode()
     return None
+
+
+PFE_CACHE = os.environ.get("ZT_INSTALLER_PFE", "/state/firmware/pfe")   # untrash-init of this run
+SEED_MNT = "/run/untrash/seed-state"
+
+
+def seed_state(target):
+    """Put the PFE PE firmware this installer runs with (untrash-init took it
+    from the stock kernel copy on the stick) into the state of the installed
+    system (ut-state partition or /.untrash/state.img), so that system never
+    has to read the NAND for it.  An empty target becomes ext4 ut-state,
+    exactly as untrash-init would format it; a non-ext4 one is left alone."""
+    if not DRYRUN and not os.path.isfile(os.path.join(PFE_CACHE, "class_c2000.elf")):
+        JOB.add("Keine PFE-Firmware im Installer: das System liest sie beim ersten Start selbst")
+        return
+    if DRYRUN or sh(["wipefs", "-n", target], check=False).strip() == "":
+        run(["mkfs.ext4", "-q", "-F", "-L", "ut-state", "-E", "lazy_itable_init=1,lazy_journal_init=1", target])
+    elif sh(["blkid", "-p", "-o", "value", "-s", "TYPE", target], check=False).strip() != "ext4":
+        JOB.add("Zustand %s ist kein ext4: PFE-Firmware nicht hinterlegt" % target)
+        return
+    run(["mkdir", "-p", SEED_MNT])
+    opts = "rw,noatime" + (",loop" if not target.startswith("/dev/") else "")
+    run(["mount", "-t", "ext4", "-o", opts, target, SEED_MNT])
+    try:
+        run(["mkdir", "-p", os.path.join(SEED_MNT, "firmware")])
+        run(["rm", "-rf", os.path.join(SEED_MNT, "firmware", "pfe")])
+        run(["cp", "-a", PFE_CACHE, os.path.join(SEED_MNT, "firmware", "pfe")])
+        run(["sync"])
+    finally:
+        run(["umount", SEED_MNT])
+    JOB.add("PFE-Firmware im Zustand des Systems hinterlegt")
 
 
 def sha256_file(path):
@@ -715,6 +748,7 @@ def do_keep_install(req, info, takeover):
                 run(["fallocate", "-l", str(STATE_IMG), os.path.join(u, "state.img")])
             else:
                 JOB.add("state.img vorhanden: bleibt erhalten")
+            seed_state(os.path.join(u, "state.img"))
             if DRYRUN or not os.path.exists(os.path.join(u, "swap.img")):
                 run(["fallocate", "-l", str(SWAP_IMG), os.path.join(u, "swap.img")])
                 run(["chmod", "600", os.path.join(u, "swap.img")])

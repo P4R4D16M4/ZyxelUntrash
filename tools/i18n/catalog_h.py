@@ -165,4 +165,12 @@ T = {
     "Bedienungsanleitung (Englisch)": ("User guide (English)", "Mode d'emploi (anglais)"),
     "PDF herunterladen": ("Download PDF", "Télécharger le PDF"),
     "In neuem Tab öffnen": ("Open in a new tab", "Ouvrir dans un nouvel onglet"),
+    # installer: PFE firmware seeded into the installed system
+    "Keine PFE-Firmware im Installer: das System liest sie beim ersten Start selbst":
+        ("No PFE firmware in the installer: the system reads it itself on first start",
+         "Pas de firmware PFE dans l'installateur : le système la lit lui-même au premier démarrage"),
+    "PFE-Firmware im Zustand des Systems hinterlegt":
+        ("PFE firmware stored in the system state", "Firmware PFE déposé dans l'état du système"),
+    "Zustand %s ist kein ext4: PFE-Firmware nicht hinterlegt":
+        ("State %s is not ext4: PFE firmware not stored", "L'état %s n'est pas en ext4 : firmware PFE non déposé"),
 }
