@@ -44,7 +44,8 @@ for m in pcie-ls1024a ahci; do mod "$m"; done
 	echo "nod /dev/kmsg 644 0 0 c 1 11"
 	echo "file /init $W/init 755 0 0"
 	echo "dir /bin 755 0 0"
-	echo "file /bin/zt-blackbox $ROOT/build/nas-tools/zt-blackbox 755 0 0"
+	cp "$ROOT/build/nas-tools/zt-blackbox" "$W/zt-blackbox"
+	echo "file /bin/zt-blackbox $W/zt-blackbox 755 0 0"
 	for p in "${ORDER[@]}"; do
 		b=$(basename "$p"); b=${b%.xz}; b=${b%.gz}
 		case $p in *.xz) xz -dc "$MODS/$p" >"$W/$b" ;; *.gz) gzip -dc "$MODS/$p" >"$W/$b" ;; *) cp "$MODS/$p" "$W/$b" ;; esac
@@ -57,6 +58,8 @@ for p in "${ORDER[@]}"; do
 	b=$(basename "$p"); echo "/lib/modules/${b%.[gx]z}"
 	i=$((i + 1)); [[ $i == "$NWDT" ]] && echo "@watchdog"
 done >"$W/load.list"
-"$GEN" "$W/list" | gzip -9n >"$OUT"
+# reproducible: gen_init_cpio takes a regular file's mtime from the file
+touch -d @1767225600 "$W"/*
+"$GEN" -t 1767225600 "$W/list" | gzip -9n >"$OUT"
 echo "INITRD=$OUT $(stat -c %s "$OUT") bytes sha256 $(sha256sum "$OUT" | cut -c1-16)"
 sed 's/^/  /' "$W/load.list"

@@ -175,13 +175,17 @@ while read -r path owner group mode; do
 	[ -n "$u" ] && [ -n "$g" ] || { echo "ownership: unknown $owner:$group for $path" >&2; exit 1; }
 	chown -h "$u:$g" "$R$path"; chmod "$mode" "$R$path"
 done
-mkfs.erofs -zlz4hc -T 1767225600 "$OUT" "$R" >/dev/null
+mkfs.erofs -zlz4hc -T 1767225600 -U "$UUID" "$OUT" "$R" >/dev/null
 OWN
-fakeroot -- sh "$W/own.sh" "$W/root" "$HERE/ownership.list" "$W/root.erofs"
+# reproducible: filesystem UUID and verity salt derive from the version, so
+# the same sources and version give the same verity root hash
+VH=$(printf 'untrash-slot:%s' "$VER" | sha256sum | cut -c1-64)
+UUID="${VH:0:8}-${VH:8:4}-${VH:12:4}-${VH:16:4}-${VH:20:12}"
+UUID=$UUID fakeroot -- sh "$W/own.sh" "$W/root" "$HERE/ownership.list" "$W/root.erofs"
 pad4k "$W/root.erofs"
 N=$(( $(stat -c %s "$W/root.erofs") / 4096 ))
 VOUT=$(/usr/sbin/veritysetup format --no-superblock --data-block-size=4096 --hash-block-size=4096 \
-	--data-blocks="$N" "$W/root.erofs" "$W/root.hash")
+	--salt="$VH" --data-blocks="$N" "$W/root.erofs" "$W/root.hash")
 RH=$(sed -n 's/^Root hash:[[:space:]]*//p' <<<"$VOUT"); SALT=$(sed -n 's/^Salt:[[:space:]]*//p' <<<"$VOUT")
 pad4k "$W/root.hash"
 cp "$ZI" "$W/k"; pad4k "$W/k"
