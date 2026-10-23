@@ -683,14 +683,36 @@ folder (default *Restored*). The backup is copied into that folder.
 
 The page shows the installed version and the system slot it runs from (A or B).
 
+### Updates from the release page
+
+Once a day the NAS looks on the release page of this project (on github.com) for a newer
+UntrashOS for this device, downloads it and checks it (signature, checksums). Nothing is installed
+on its own: when an update is ready, admins see a note after signing in, and the Updates page shows
+the new version with its release notes.
+
+1. Click **Install UntrashOS x.y** and confirm: the image is written to the **other** slot.
+2. Click **Restart now** (or restart later).
+
+| Setting | Values | Meaning |
+|---|---|---|
+| Check for updates every day | **on** / off | **Check now** works either way. |
+| Download updates automatically | **on** / off | Off: the page shows the new version with a **Download** button. |
+| Channel | **Stable releases**, Beta (pre-releases too) | Beta also offers test versions before a release. |
+
+A check is one anonymous request to github.com; nothing about the NAS is sent. Only images signed by
+UntrashOS are accepted, and only versions newer than the running one are offered.
+
+### Install from a file
+
 1. Click **Choose a system image …** and select an update file (`untrash-…-update.utslot`). A stick
    image (`.img`) is refused.
 2. The file is uploaded (with progress) and checked: signature and checksums.
-3. Click **Install**: the image is written to the **other** slot.
+3. Click **Install**: the image is written to the **other** slot. An image that is not newer than
+   the running system needs **Install the older version anyway**.
 4. Click **Restart now**.
 
-If the new system does not start cleanly, the loader goes back to the current one by itself. Your
-settings and data are not part of the slot and stay as they are.
+Either way: if the new system does not start cleanly, the loader goes back to the current one by
+itself. Your settings and data are not part of the slot and stay as they are.
 
 ## 16. Status, logs and system tools
 

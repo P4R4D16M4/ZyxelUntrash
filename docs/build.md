@@ -121,7 +121,25 @@ ad filter (real dnsmasq), the watchdog keeper, sounds and the translations.
 | `docs/` | user guide, architecture, hardware reference |
 | `build/`, `inputs/` | generated / external, not in git |
 
-## 6. Safety
+## 6. Publishing a release
+
+Installed systems look for updates on the GitHub releases of this
+repository (`board/nas542/rootfs/usr/share/untrash/board.json`):
+
+1. `make stick update RELEASE=1.1`: the version is written into the slot
+   manifest, signed with the dev key and, if present, the release key.
+2. A GitHub release with the tag **`v1.1`** (the tag without `v` must be the
+   `RELEASE` above, or the NAS refuses the image), with the assets
+   `untrash-1.1-update.utslot` (the NAS takes the asset matching
+   `untrash-*-update.utslot`) and the stick image.  Mark test versions as
+   *pre-release*: only NAS on the beta channel take them.  Drafts are never
+   offered.
+3. The NAS finds it at its next daily check (or **Check now**), downloads and
+   verifies it; an admin installs it.
+
+The repository must be public for this; until then updates go by file.
+
+## 7. Safety
 
 The loader is written to NAND by the stock firmware (PartnerKey hook), only
 after a full backup of the affected partitions onto the stick, and

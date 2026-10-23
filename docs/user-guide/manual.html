@@ -1650,15 +1650,54 @@ folder (default <em>Restored</em>). The backup is copied into that folder.</p>
 <h2 id="15-updates">15. Updates</h2>
 <p><img alt="Updates" src="img/d45-updates.webp" /></p>
 <p>The page shows the installed version and the system slot it runs from (A or B).</p>
+<h3 id="updates-from-the-release-page">Updates from the release page</h3>
+<p>Once a day the NAS looks on the release page of this project (on github.com) for a newer
+UntrashOS for this device, downloads it and checks it (signature, checksums). Nothing is installed
+on its own: when an update is ready, admins see a note after signing in, and the Updates page shows
+the new version with its release notes.</p>
+<ol>
+<li>Click <strong>Install UntrashOS x.y</strong> and confirm: the image is written to the <strong>other</strong> slot.</li>
+<li>Click <strong>Restart now</strong> (or restart later).</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Values</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Check for updates every day</td>
+<td><strong>on</strong> / off</td>
+<td><strong>Check now</strong> works either way.</td>
+</tr>
+<tr>
+<td>Download updates automatically</td>
+<td><strong>on</strong> / off</td>
+<td>Off: the page shows the new version with a <strong>Download</strong> button.</td>
+</tr>
+<tr>
+<td>Channel</td>
+<td><strong>Stable releases</strong>, Beta (pre-releases too)</td>
+<td>Beta also offers test versions before a release.</td>
+</tr>
+</tbody>
+</table>
+<p>A check is one anonymous request to github.com; nothing about the NAS is sent. Only images signed by
+UntrashOS are accepted, and only versions newer than the running one are offered.</p>
+<h3 id="install-from-a-file">Install from a file</h3>
 <ol>
 <li>Click <strong>Choose a system image …</strong> and select an update file (<code>untrash-…-update.utslot</code>). A stick
    image (<code>.img</code>) is refused.</li>
 <li>The file is uploaded (with progress) and checked: signature and checksums.</li>
-<li>Click <strong>Install</strong>: the image is written to the <strong>other</strong> slot.</li>
+<li>Click <strong>Install</strong>: the image is written to the <strong>other</strong> slot. An image that is not newer than
+   the running system needs <strong>Install the older version anyway</strong>.</li>
 <li>Click <strong>Restart now</strong>.</li>
 </ol>
-<p>If the new system does not start cleanly, the loader goes back to the current one by itself. Your
-settings and data are not part of the slot and stay as they are.</p>
+<p>Either way: if the new system does not start cleanly, the loader goes back to the current one by
+itself. Your settings and data are not part of the slot and stay as they are.</p>
 <h2 id="16-status-logs-and-system-tools">16. Status, logs and system tools</h2>
 <p><strong>Status</strong> is updated every two seconds:</p>
 <p><img alt="Status" src="img/d16-status.webp" /></p>
