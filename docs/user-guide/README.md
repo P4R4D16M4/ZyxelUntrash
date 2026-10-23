@@ -51,7 +51,7 @@ On Linux, the project script does the same with extra checks. Replace `/dev/sdX`
 your stick. Every byte on that device is overwritten:
 
 ```bash
-sudo os/install/write-stick.sh untrash-stick-<version>.img /dev/sdX
+sudo install/write-stick.sh untrash-stick-<version>.img /dev/sdX
 ```
 
 The stick image is the same for every NAS542. Nothing on it is made for a particular device.

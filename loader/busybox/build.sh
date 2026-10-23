@@ -5,7 +5,7 @@
 # catv, now "cat -v"); passwd/group are parsed by BusyBox itself, so the
 # static binary needs no glibc NSS modules.
 #   build/busybox/arm/busybox    for the loader initramfs
-#   build/busybox/host/busybox   same config for the PC tests (os/loader/tests)
+#   build/busybox/host/busybox   same config for the PC tests (loader/slot/tests)
 #   build/busybox/applets.txt    applet list (initramfs links, tests)
 set -Eeuo pipefail
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)

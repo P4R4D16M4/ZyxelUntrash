@@ -87,7 +87,7 @@ page, or the link at the top of the installer. All of them offer this guide as a
 <p>Write the image to the stick with any image writer (balenaEtcher, Raspberry Pi Imager, <code>dd</code>).
 On Linux, the project script does the same with extra checks. Replace <code>/dev/sdX</code> with
 your stick. Every byte on that device is overwritten:</p>
-<pre><code class="language-bash">sudo os/install/write-stick.sh untrash-stick-&lt;version&gt;.img /dev/sdX
+<pre><code class="language-bash">sudo install/write-stick.sh untrash-stick-&lt;version&gt;.img /dev/sdX
 </code></pre>
 <p>The stick image is the same for every NAS542. Nothing on it is made for a particular device.
 Everything that belongs to one NAS is created on that NAS during the first run. The stick then

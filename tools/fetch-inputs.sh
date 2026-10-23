@@ -10,7 +10,7 @@
 # inputs/src/busybox-1.37.0.tar.bz2        busybox.net (loader userland)
 # The PFE network engine firmware is not an input: every NAS542 carries it
 # in its stock firmware, UntrashOS copies it from there on the NAS
-# (os/image/untrash-files/usr/lib/untrash/untrash-pfe-firmware).
+# (board/nas542/rootfs/usr/lib/untrash/untrash-pfe-firmware).
 #
 # Yours, see docs/build.md: inputs/keys/untrash-dev.sec (slot signing key).
 set -Eeuo pipefail

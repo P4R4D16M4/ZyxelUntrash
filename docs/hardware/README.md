@@ -69,20 +69,20 @@ NAND `[DUMP]` (Spansion S34ML02G1, 256 MiB, 2 KiB pages, 128 KiB blocks):
 Stock boots `kernel1` (or `kernel2` as fallback) with root on UBI
 (`ubi.mtd=2,2048`).  The Barebox environment is a **Barebox envfs** in the SPI
 `env` partition: header magic, CRC32 over data and superblock, one inode per
-file (`os/install/envfs.py` reads and writes it).  The stock environment
+file (`install/envfs.py` reads and writes it).  The stock environment
 carries the device MAC addresses; keep dumps of it private.
 
 **UntrashOS boot chain** `[HW]`:
 
-1. Barebox runs the UntrashOS environment script (`os/install/envfs.py`, LOADER
+1. Barebox runs the UntrashOS environment script (`install/envfs.py`, LOADER
    template).  It switches fan and GPIOs on (the same `mw` writes as stock) and
    boots the **loader** from `kernel2` with `bootm`.
 2. The loader (Linux 6.6 + initramfs, `loader/`) powers the disk bays like the
    stock `platform_init` (§5), assembles the stock md/LVM volumes **read-only**,
    finds `/.untrash/bootstate`, verifies the signed slot file (Ed25519,
-   `os/loader/zt-sig.c`) and **kexec**s the system kernel.
+   `untrashos/slot/zt-sig.c`) and **kexec**s the system kernel.
 3. The system kernel boots the erofs + dm-verity root of the slot
-   (`os/image/`), with state on an ext4 image file on the data volume.
+   (`untrashos/image/`), with state on an ext4 image file on the data volume.
 4. A/B slots: `/.untrash/bootstate` (`pref`, tries per slot, `good`); a slot
    that does not confirm itself (`untrash-mark-good`) loses a try, after three
    the loader takes the other slot.
@@ -95,7 +95,7 @@ or the full restore.  RAM survives the reset of this board.
 
 **PartnerKey** `[DEC]`: the stock firmware runs `usb_key_func.sh` from a USB
 stick that also carries `nas5xx_check_file`.  UntrashOS uses this as its
-installer entry (`os/install/partnerkey/`): backup of env/kernel partitions to
+installer entry (`install/partnerkey/`): backup of env/kernel partitions to
 the stick, write of the loader into `kernel2`, read-back verification.
 
 ## 4. Watchdog, reset, power
@@ -106,7 +106,7 @@ the stick, write of the loader into `kernel2`, read-back verification.
   `exec systemd`, then `untrash-wdt`).  `[HW]`
 - **Pitfall:** systemd does not feed the watchdog while PID 1 is busy with a
   `daemon-reload`.  Under load a reload took >15 s and reset the NAS.  UntrashOS
-  therefore feeds it from a real-time process (`os/image/tools/untrash-wdt.c`)
+  therefore feeds it from a real-time process (`untrashos/image/tools/untrash-wdt.c`)
   and keeps only the reboot watchdog in systemd.  `[HW]`
 - **Reset:** the stock global reset (clock/reset controller) restarts the
   board but does **not** power-cycle the disks.  After such a warm reset the

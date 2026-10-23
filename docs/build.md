@@ -1,9 +1,18 @@
 # Building UntrashOS
 
 UntrashOS is built on a Debian/Ubuntu PC (x86-64) for the NAS542 (ARMv7).
-Everything comes from this repository plus a few external inputs that are
-downloaded from their official sources or that you provide yourself.  Nothing
-proprietary is stored in the repository.
+Everything comes from this repository, the UntrashOS repository (the
+device-independent part, a git submodule in `untrashos/`) and a few external
+inputs that are downloaded from their official sources or that you provide
+yourself.  Nothing proprietary is stored in the repositories.
+
+```
+git clone --recursive https://github.com/P4R4D16M4/ZyxelUntrash.git
+```
+
+In an existing checkout: `git submodule update --init`.  The submodule is
+pinned to one UntrashOS commit; `git submodule update --remote` moves it to
+the newest one (then commit the new pin).
 
 ## 1. Tools
 
@@ -36,11 +45,11 @@ You provide one file yourself:
   images.  Create a pair with `zt-sig`:
 
   ```
-  gcc -O2 -Ithird_party/tweetnacl -o zt-sig os/loader/zt-sig.c third_party/tweetnacl/tweetnacl.c
-  ./zt-sig keygen inputs/keys/untrash-dev.sec os/loader/keys/untrash-dev.pub
+  gcc -O2 -Iuntrashos/third_party/tweetnacl -o zt-sig untrashos/slot/zt-sig.c untrashos/third_party/tweetnacl/tweetnacl.c
+  ./zt-sig keygen inputs/keys/untrash-dev.sec untrashos/slot/keys/untrash-dev.pub
   ```
 
-  The public key in `os/loader/keys/` goes into loader and system; a NAS only
+  The public key in `untrashos/slot/keys/` goes into loader and system; a NAS only
   accepts system images signed with a key it knows.
 
 
@@ -96,12 +105,12 @@ ad filter (real dnsmasq), the watchdog keeper, sounds and the translations.
 |---|---|
 | `kernel/` | patch series for Linux 6.6.145, full configs (system, loader), build script |
 | `loader/` | loader initramfs (`rc.ssh`, `zt-init.c`, module list) and its BusyBox config |
-| `os/loader/` | stage-1 loader `zt-loader`, `zt-blk.c` (md/LVM/dm), `zt-sig.c` (Ed25519), public keys, tests |
-| `os/image/` | system image: mkosi config, `untrash-files/` (Desk, services, tools), slot builder, tests |
-| `os/install/` | installer stick, PartnerKey hook, Barebox envfs, stock restore |
-| `os/design/` | design system, icons, translations (DE/EN/FR) |
+| `loader/slot/` | stage-1 loader `zt-loader`, `zt-blk.c` (md/LVM/dm), slot initrd `zt-slotinit.c`, tests |
+| `board/nas542/` | board part of the system image: `board.conf`, `rootfs/` (power MCU, PFE firmware, bays, fan/PCIe units), `slot-hook.sh`, slot initrd builder, tests |
+| `install/` | installer stick, PartnerKey hook, Barebox envfs, stock restore |
 | `nas-tools/` | static helpers: fan, I2C, mount, blackbox, SMART |
-| `tools/` | input fetcher, translations, user guide builder, loader cpio tool |
+| `tools/` | input fetcher, user guide builder, PFE and loader tools |
+| `untrashos/` | UntrashOS (submodule): Desk, services, design system, translations, mkosi config, slot builder, slot signatures and keys (`untrashos/docs/board-interface.md`) |
 | `docs/` | user guide, architecture, hardware reference |
 | `build/`, `inputs/` | generated / external, not in git |
 

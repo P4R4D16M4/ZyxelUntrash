@@ -1,6 +1,6 @@
-# UntrashOS
+# ZyxelUntrash
 
-**A maintained Linux for the Zyxel NAS542, the NAS whose vendor firmware is out of support.**
+**UntrashOS for the Zyxel NAS542: a maintained Linux for the NAS, the NAS whose vendor firmware is out of support.**
 
 UntrashOS replaces the Zyxel firmware with Debian 13 on Linux 6.6 LTS and keeps
 what you have: your disks, volumes, shares, users and passwords are taken over
@@ -23,7 +23,12 @@ backup the installer made), and it updates itself with signed A/B system images.
 - [User guide](docs/user-guide/README.md) — installation, Desk, every app ([PDF](docs/user-guide/UntrashOS-User-Guide.pdf))
 - [Building](docs/build.md) — from source to the installer stick
 - [Hardware reference](docs/hardware/README.md) — SoC, memory map, boot chain, board peripherals and the pitfalls, for anyone porting further
-- [Stock takeover](docs/architecture/stock-takeover.md) — how the Zyxel configuration is taken over; [design system](docs/architecture/untrash-design.md)
+- [Stock takeover](untrashos/docs/architecture/stock-takeover.md) — how the Zyxel configuration is taken over; [design system](untrashos/docs/architecture/untrash-design.md)
+
+This repository is the firmware for the NAS542: kernel, loader, installer and
+board support.  The operating system itself (Desk, services, image build) is
+[UntrashOS](https://github.com/P4R4D16M4/UntrashOS), included here as the
+submodule `untrashos/`; clone with `git clone --recursive`.
 
 ## Status
 

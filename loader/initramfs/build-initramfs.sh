@@ -12,7 +12,7 @@ set -Eeuo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(cd "$HERE/../.." && pwd)
 MODDIR=${1:?module dir}; OUT=${2:?output cpio}
-IN=$ROOT/inputs; NT=$ROOT/build/nas-tools; LDR=$ROOT/os/loader
+IN=$ROOT/inputs; NT=$ROOT/build/nas-tools; LDR=$ROOT/loader/slot
 BB=$ROOT/build/busybox
 for f in "$BB/arm/busybox" "$BB/applets.txt" "$NT/zt-mount"; do
 	[[ -f $f ]] || { echo "missing $f (loader/busybox/build.sh, nas-tools/build.sh)" >&2; exit 1; }
@@ -65,7 +65,7 @@ L="$W/list"
 	echo "file /bin/zt-loader $LDR/zt-loader 755 0 0"
 	echo "file /bin/zt-blk $W/zt-blk 755 0 0"
 	echo "dir /etc/untrash 755 0 0"
-	for k in "$LDR"/keys/*.pub; do echo "file /etc/untrash/$(basename "$k") $k 644 0 0"; done
+	for k in "$ROOT"/untrashos/slot/keys/*.pub; do echo "file /etc/untrash/$(basename "$k") $k 644 0 0"; done
 	echo "dir /lib/modules 755 0 0"
 	echo "dir /lib/modules/zt 755 0 0"
 	for m in "$MODDIR"/*.ko; do echo "file /lib/modules/zt/$(basename "$m") $m 644 0 0"; done

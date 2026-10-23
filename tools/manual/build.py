@@ -5,7 +5,7 @@
   build.py --check  only check that manual.html matches README.md (make test)
 
 manual.html is one page with the screenshots in img/ next to it.  The image
-build (os/image/mkslot-erofs.sh) ships it as /usr/share/untrash/manual/
+build (untrashos/image/mkslot-erofs.sh) ships it as /usr/share/untrash/manual/
 index.html; Untrash Desk and the installer serve it at /manual/.  The PDF is
 printed by headless Chromium from the same page (A4, page numbers)."""
 import base64
@@ -23,7 +23,7 @@ UG = os.path.join(ROOT, "docs", "user-guide")
 SRC = os.path.join(UG, "README.md")
 OUT_HTML = os.path.join(UG, "manual.html")
 OUT_PDF = os.path.join(UG, "UntrashOS-User-Guide.pdf")
-LOGO = os.path.join(ROOT, "os", "design", "assets", "logo-mark-192.png")
+LOGO = os.path.join(ROOT, "untrashos", "design", "assets", "logo-mark-192.png")
 
 
 def slug(value, separator="-"):

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Static ARM builds of the NAS helpers -> build/nas-tools/ (loader initramfs,
-# slot image).  zt-sig comes from os/loader/zt-sig.c (+ TweetNaCl), zt-kexec
+# slot image).  zt-sig comes from untrashos/slot/zt-sig.c (+ TweetNaCl), zt-kexec
 # is kexec-tools 2.0.31 (inputs/src, tools/fetch-inputs.sh).
 set -Eeuo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -11,7 +11,7 @@ for c in "$ROOT"/nas-tools/zt-*.c; do
 	"${CC[@]}" -o "$O/$n" "$c"
 	arm-linux-gnueabihf-strip "$O/$n"
 done
-"${CC[@]}" -I"$ROOT/third_party/tweetnacl" -o "$O/zt-sig" "$ROOT/os/loader/zt-sig.c" "$ROOT/third_party/tweetnacl/tweetnacl.c"
+"${CC[@]}" -I"$ROOT/untrashos/third_party/tweetnacl" -o "$O/zt-sig" "$ROOT/untrashos/slot/zt-sig.c" "$ROOT/untrashos/third_party/tweetnacl/tweetnacl.c"
 arm-linux-gnueabihf-strip "$O/zt-sig"
 if [[ ! -f $O/zt-kexec ]]; then
 	T=$ROOT/inputs/src/kexec-tools-2.0.31.tar.xz
