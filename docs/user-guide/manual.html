@@ -144,7 +144,7 @@ device already uses the name, the installer answers as <code>http://untrash-2.lo
 </tr>
 <tr>
 <td><strong>Language</strong> (top right)</td>
-<td>Deutsch, English, Français. The installed system starts with the language chosen here.</td>
+<td>English, Deutsch, Français. The installed system starts with the language chosen here.</td>
 </tr>
 <tr>
 <td><strong>User guide</strong> (top)</td>
@@ -170,19 +170,19 @@ volume. Only <strong>way A</strong> erases a disk.</p>
 <td><strong>B – Keep and take over</strong></td>
 <td>New installation on a Zyxel volume. Users, groups, shares and SMB passwords of the Zyxel firmware are taken over on the first start.</td>
 <td>kept</td>
-<td><code>BEHALTEN</code></td>
+<td><code>KEEP</code></td>
 </tr>
 <tr>
 <td><strong>C – Keep, set up anew</strong></td>
 <td>New installation on a Zyxel volume. A new <code>admin</code> password and a network name are set. Every top-level folder becomes a share for <code>admin</code>. The old users are not taken over.</td>
 <td>kept</td>
-<td><code>BEHALTEN</code></td>
+<td><code>KEEP</code></td>
 </tr>
 <tr>
 <td><strong>A – Erase the disk and reinstall</strong></td>
 <td>The chosen disk is erased and gets its own UntrashOS layout (two system slots, state, swap, data area with btrfs).</td>
 <td><strong>erased</strong> on that disk</td>
-<td><code>LÖSCHEN &lt;disk&gt;</code>, e.g. <code>LÖSCHEN sdc</code></td>
+<td><code>DELETE &lt;disk&gt;</code>, e.g. <code>DELETE sdc</code></td>
 </tr>
 <tr>
 <td><strong>D – Back to the stock firmware</strong></td>
@@ -348,7 +348,7 @@ After way C, use <code>admin</code> and the password you chose in the installer.
 <tbody>
 <tr>
 <td>Language</td>
-<td>Language of this browser: Deutsch, English, Français.</td>
+<td>Language of this browser: English, Deutsch, Français.</td>
 </tr>
 <tr>
 <td>User name, Password</td>
@@ -426,7 +426,7 @@ Shares whose volume is missing are listed under <em>Volume missing</em> and cann
 <td>Copies or converts a file or folder, see below.</td>
 </tr>
 <tr>
-<td><strong>Share</strong> (per row)</td>
+<td><strong>Share…</strong> (per row)</td>
 <td>Creates a download link, see below.</td>
 </tr>
 <tr>
@@ -676,7 +676,7 @@ so the Zyxel firmware can still read them after the way back.</p>
 <tr>
 <td><strong>+ New volume</strong></td>
 <td>New array on free disks, see below.</td>
-<td><code>FORMATIEREN</code></td>
+<td><code>FORMAT</code></td>
 </tr>
 <tr>
 <td><strong>Rename</strong></td>
@@ -686,22 +686,22 @@ so the Zyxel firmware can still read them after the way back.</p>
 <tr>
 <td><strong>Add disks</strong></td>
 <td>Extends the array with free disks; the RAID type stays.</td>
-<td><code>FORMATIEREN</code></td>
+<td><code>FORMAT</code></td>
 </tr>
 <tr>
 <td><strong>Change RAID type</strong></td>
 <td>Moves to the next RAID type (for example RAID 1 → RAID 5) with additional disks.</td>
-<td><code>FORMATIEREN</code></td>
+<td><code>FORMAT</code></td>
 </tr>
 <tr>
 <td><strong>Spare disk</strong></td>
 <td>Adds a hot spare that takes over when a disk fails.</td>
-<td><code>FORMATIEREN</code></td>
+<td><code>FORMAT</code></td>
 </tr>
 <tr>
 <td><strong>Repair</strong> (only for degraded arrays)</td>
 <td>Rebuilds the array onto a free disk.</td>
-<td><code>FORMATIEREN</code></td>
+<td><code>FORMAT</code></td>
 </tr>
 <tr>
 <td><strong>Extend</strong></td>
@@ -711,7 +711,7 @@ so the Zyxel firmware can still read them after the way back.</p>
 <tr>
 <td><strong>Delete</strong></td>
 <td>Deletes the volume and every share on it.</td>
-<td><code>LÖSCHEN</code></td>
+<td><code>DELETE</code></td>
 </tr>
 </tbody>
 </table>
@@ -927,12 +927,12 @@ forwards. <strong>Forwarded services are reachable from the internet.</strong> U
 <tbody>
 <tr>
 <td>System language</td>
-<td><strong>Deutsch</strong>, English, Français</td>
+<td><strong>English</strong>, Deutsch, Français</td>
 <td>For everyone who has not chosen a language in their browser.</td>
 </tr>
 <tr>
 <td>Language of this browser</td>
-<td><strong>— as system —</strong>, Deutsch, English, Français</td>
+<td><strong>— as system —</strong>, English, Deutsch, Français</td>
 <td>Only for the browser you are using.</td>
 </tr>
 </tbody>
@@ -1771,8 +1771,8 @@ automatically.</p>
 <p><strong>Power button</strong> (end of the dock): <strong>Run</strong> switches the NAS off. With <em>Restart instead</em> it
 restarts. All connections are closed.</p>
 <p><img alt="Switch off or restart" src="img/d50-power-dialog.webp" /></p>
-<p><strong>Your user name</strong> (top bar): change the <em>language of this browser</em> (— as system —, Deutsch,
-English, Français) or <strong>Sign out</strong>.</p>
+<p><strong>Your user name</strong> (top bar): change the <em>language of this browser</em> (— as system —, English, Deutsch,
+Français) or <strong>Sign out</strong>.</p>
 <h2 id="17-working-as-a-normal-user">17. Working as a normal user</h2>
 <p>Users who are not administrators see a smaller Desk: <strong>Files</strong>, <strong>Channels</strong>, <strong>Manual</strong> and
 <strong>My account</strong>. They see only the shares they have rights to and can only change what those rights

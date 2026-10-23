@@ -90,7 +90,7 @@ device already uses the name, the installer answers as `http://untrash-2.local/`
 | **Stock backup** | *present, checked*: the flash backup was read back and compared when it was made. *present (unchecked)*: the backup exists but was not compared. *No stock backup*: way D is not possible. |
 | **Stock configuration on the stick** | The saved Zyxel users, groups and shares, needed for way B. |
 | **Disk table** | Every disk with size, model and content: **Zyxel-Stock** (a disk of the Zyxel firmware), **empty**, **UntrashOS**, **RAID member** or **unknown**. |
-| **Language** (top right) | Deutsch, English, Français. The installed system starts with the language chosen here. |
+| **Language** (top right) | English, Deutsch, Français. The installed system starts with the language chosen here. |
 | **User guide** (top) | Opens this guide. |
 
 ### 1.5 The four ways
@@ -101,9 +101,9 @@ volume. Only **way A** erases a disk.
 
 | Way | What happens | Data | Confirmation word |
 |---|---|---|---|
-| **B – Keep and take over** | New installation on a Zyxel volume. Users, groups, shares and SMB passwords of the Zyxel firmware are taken over on the first start. | kept | `BEHALTEN` |
-| **C – Keep, set up anew** | New installation on a Zyxel volume. A new `admin` password and a network name are set. Every top-level folder becomes a share for `admin`. The old users are not taken over. | kept | `BEHALTEN` |
-| **A – Erase the disk and reinstall** | The chosen disk is erased and gets its own UntrashOS layout (two system slots, state, swap, data area with btrfs). | **erased** on that disk | `LÖSCHEN <disk>`, e.g. `LÖSCHEN sdc` |
+| **B – Keep and take over** | New installation on a Zyxel volume. Users, groups, shares and SMB passwords of the Zyxel firmware are taken over on the first start. | kept | `KEEP` |
+| **C – Keep, set up anew** | New installation on a Zyxel volume. A new `admin` password and a network name are set. Every top-level folder becomes a share for `admin`. The old users are not taken over. | kept | `KEEP` |
+| **A – Erase the disk and reinstall** | The chosen disk is erased and gets its own UntrashOS layout (two system slots, state, swap, data area with btrfs). | **erased** on that disk | `DELETE <disk>`, e.g. `DELETE sdc` |
 | **D – Back to the stock firmware** | Writes the Zyxel boot data back from the backup on the stick (see [section 18](#18-back-to-the-zyxel-firmware)). | kept | `STOCK` |
 
 Choosing a way shows its **plan**, step by step. Nothing happens until you confirm:
@@ -192,7 +192,7 @@ After way C, use `admin` and the password you chose in the installer.
 
 | Option | Meaning |
 |---|---|
-| Language | Language of this browser: Deutsch, English, Français. |
+| Language | Language of this browser: English, Deutsch, Français. |
 | User name, Password | Your account. Several wrong passwords in a row lock the sign-in for a while. |
 | User guide | Opens this guide without signing in. |
 
@@ -228,7 +228,7 @@ Shares whose volume is missing are listed under *Volume missing* and cannot be o
 | **Exports** | Running and finished exports. |
 | **Shared links** | Your download links with their expiry: **Copy** the address again or **Delete** the link. Administrators see the links of all users. |
 | **Export** (per row) | Copies or converts a file or folder, see below. |
-| **Share** (per row) | Creates a download link, see below. |
+| **Share…** (per row) | Creates a download link, see below. |
 | **As share** (per folder, admins only) | Makes the folder a share of its own ([section 5](#5-shares)). |
 | **Rename**, **Delete** (per row) | Renames, or deletes permanently after a confirmation. (The recycle bin applies to deletions over the network, for example from Windows.) |
 
@@ -322,14 +322,14 @@ so the Zyxel firmware can still read them after the way back.
 
 | Action | What it does | Confirmation |
 |---|---|---|
-| **+ New volume** | New array on free disks, see below. | `FORMATIEREN` |
+| **+ New volume** | New array on free disks, see below. | `FORMAT` |
 | **Rename** | New name for the volume. | — |
-| **Add disks** | Extends the array with free disks; the RAID type stays. | `FORMATIEREN` |
-| **Change RAID type** | Moves to the next RAID type (for example RAID 1 → RAID 5) with additional disks. | `FORMATIEREN` |
-| **Spare disk** | Adds a hot spare that takes over when a disk fails. | `FORMATIEREN` |
-| **Repair** (only for degraded arrays) | Rebuilds the array onto a free disk. | `FORMATIEREN` |
+| **Add disks** | Extends the array with free disks; the RAID type stays. | `FORMAT` |
+| **Change RAID type** | Moves to the next RAID type (for example RAID 1 → RAID 5) with additional disks. | `FORMAT` |
+| **Spare disk** | Adds a hot spare that takes over when a disk fails. | `FORMAT` |
+| **Repair** (only for degraded arrays) | Rebuilds the array onto a free disk. | `FORMAT` |
 | **Extend** | After swapping all disks for larger ones: grows the array and file system to the new size. | — |
-| **Delete** | Deletes the volume and every share on it. | `LÖSCHEN` |
+| **Delete** | Deletes the volume and every share on it. | `DELETE` |
 
 The confirmation word protects the disks: everything on the selected disks, or on the deleted
 volume, is lost. A running job is shown with its progress and log.
@@ -417,8 +417,8 @@ forwards. **Forwarded services are reachable from the internet.** Use HTTPS and 
 
 | Option | Choices | Meaning |
 |---|---|---|
-| System language | **Deutsch**, English, Français | For everyone who has not chosen a language in their browser. |
-| Language of this browser | **— as system —**, Deutsch, English, Français | Only for the browser you are using. |
+| System language | **English**, Deutsch, Français | For everyone who has not chosen a language in their browser. |
+| Language of this browser | **— as system —**, English, Deutsch, Français | Only for the browser you are using. |
 
 ### Services
 
@@ -751,8 +751,8 @@ restarts. All connections are closed.
 
 ![Switch off or restart](img/d50-power-dialog.webp)
 
-**Your user name** (top bar): change the *language of this browser* (— as system —, Deutsch,
-English, Français) or **Sign out**.
+**Your user name** (top bar): change the *language of this browser* (— as system —, English, Deutsch,
+Français) or **Sign out**.
 
 ## 17. Working as a normal user
 
