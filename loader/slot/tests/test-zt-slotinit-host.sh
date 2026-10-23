@@ -4,8 +4,9 @@
 # Builds a mini slot (erofs + verity + trailer), puts it as a slot file into
 # three containers -- FAT stick, ext4 on md raid1, ext4 on an LVM LV on md --
 # and checks that zt-slotinit finds each one, mounts it (vfat ro, ext4 rw),
-# brings up the verity root from the file and writes boot.env; a slot file
-# with one flipped byte must not yield readable root data.
+# brings up the verity root from the file and writes boot.env; the same slot
+# on a GPT partition ut-sys-a (untrash.part=, way A) must come up without
+# boot.env; a slot file with one flipped byte must not yield readable root data.
 set -Eeuo pipefail
 ZS=$(readlink -f "${1:?zt-slotinit}"); TR=$(readlink -f "${2:?toolroot}")
 export LD_LIBRARY_PATH=$TR/lib/x86_64-linux-gnu:$TR/usr/lib/x86_64-linux-gnu
@@ -88,6 +89,20 @@ SECONDS=0; run lv:$MU:vg_ztst/lv_sys && r=0 || r=1
 check "lv: zt-slotinit ok (degraded, after the 20 s wait: ${SECONDS}s)" "[ $r = 0 ]"
 check "lv: root marker readable" "grep -q zt-slotinit-marker $W/root/newroot/etc/untrash-version"
 check "lv: dm name as lvm2" "[ -e /sys/block/\$(basename \$(readlink -f /dev/mapper/vg_ztst-lv_sys 2>/dev/null || echo none))/dm ] || $DMS ls | grep -q '^vg_ztst-lv_sys'"
+undo
+
+echo "--- GPT slot partition (untrash.part=, way A)"
+mkloop gpt.img 64M; G=$L
+sgdisk -a 2048 -n 1:0:+16M -t 1:8300 -c 1:ut-sys-a "$G" >/dev/null; losetup -d "$G"
+G=$(losetup -f --show -P "$W/gpt.img"); LOOPS+=("$G"); udevadm settle 2>/dev/null || sleep 1
+dd if="$W/slot.utslot" of="${G}p1" bs=4096 conv=notrunc status=none
+echo "console=ttyS0 untrash.verity=$N,$RH,$SALT untrash.part=ut-sys-a init=/usr/lib/untrash/untrash-init" >"$W/cmdline"
+ZT_SLOTINIT_TEST="$W/root" ZT_SLOTINIT_CMDLINE="$W/cmdline" "$ZS" >"$W/log" 2>&1 && r=0 || r=1
+sed 's/^/     | /' "$W/log"
+check "part: zt-slotinit ok" "[ $r = 0 ]"
+check "part: root marker readable" "grep -q zt-slotinit-marker $W/root/newroot/etc/untrash-version"
+check "part: verity on ${G}p1" "grep -q 'on ${G}p1 (ut-sys-a' $W/log"
+check "part: no boot.env (untrash-init: partition boot)" "[ ! -e $W/root/newroot/run/untrash/boot.env ]"
 undo
 
 echo "--- tampered slot file"

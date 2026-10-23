@@ -66,7 +66,7 @@ NAND `[DUMP]` (Spansion S34ML02G1, 256 MiB, 2 KiB pages, 128 KiB blocks):
 10M(config) 10M(kernel1) 110M(rootfs1) 10M(kernel2) 110M(rootfs2) -(reserved)
 ```
 
-Stock boots `kernel1` (or `kernel2` as fallback) with root on UBI
+Stock boots `kernel<curr_bootfrom>` (1 or 2, from the env) with root on UBI
 (`ubi.mtd=2,2048`).  The Barebox environment is a **Barebox envfs** in the SPI
 `env` partition: header magic, CRC32 over data and superblock, one inode per
 file (`install/envfs.py` reads and writes it).  The stock environment
@@ -138,6 +138,8 @@ the stick, write of the loader into `kernel2`, read-back verification.
   set for PCIe too** (patch 0015); then CMU, root port and endpoint come up and
   the generic `ahci` driver serves the other two bays.  The PCIe and AHCI
   modules must be loaded by the loader **and** the slot initrd.  `[HW]`
+  Every system start therefore goes through the slot initrd, a slot partition
+  (way A) as well (`cmdline_part`, `untrash.part=`).
 - USB: xHCI with an internal hub; USB power = GPIO14 (stock drives it high).
 - Buttons `[HW]`: GPIO4 power (`KEY_POWER`), GPIO5 RESET (`KEY_RESTART`, active
   low), GPIO6 COPY (`KEY_PROG1`, active low); stock meaning: RESET 2 s = network
@@ -167,7 +169,7 @@ firmware byte for byte.
 - The stock firmware is **pfe_12_00_2** (with stock driver
   `pfe_ctrl_12_00_2`; GPL source of that version: Synology,
   github.com/scpcom/linux branch `dsgpl-3.2.y-comcerto2k`).  It is only in the
-  initramfs of the stock kernel (NAND `kernel1`: uImage, zImage with a gzip
+  initramfs of the stock kernel (NAND `kernel1` or `kernel2`: uImage, zImage with a gzip
   kernel image that carries the initramfs as a second gzip stream,
   `lib/firmware/*_c2000*.elf`), on every NAS542.  The stock root file system
   (NAND `rootfs1`, UBI volume `ubi_rootfs1`) does **not** contain it `[HW]`.
@@ -176,8 +178,12 @@ firmware byte for byte.
   `CONFIG_PFE_CTRL_FW12` (patch 0016) restores the pfe_12 layout;
   `tools/pfe/check-fw12-layout.py` compares a built `pfe.ko` with the stock
   `pfe.ko` (whose symbol table survived) section by section.
-- UntrashOS extracts the stock set once from `kernel1` to `/state/firmware/pfe`
+- UntrashOS extracts the stock set once to `/state/firmware/pfe`
   (`untrash-pfe-firmware` + `untrash-pfe-extract`, before the driver loads;
+  source: the stock kernel copy the install run saved to the stick
+  (`install-*/mtd<4|6>-before-a.bin`); the installer seeds the state of the
+  installed system with it; reading `kernel<ACTIVE_SLOT>` from the NAND is
+  only the fallback, because the NAND driver cannot yet correct ECC errors;
   log in `/state/firmware/pfe.log`) and accepts only version `pfe_12_00_2`
   with the expected `.dmem_sh` sizes `[HW]`.
 - The system kernel is started by kexec from the loader, which has read the

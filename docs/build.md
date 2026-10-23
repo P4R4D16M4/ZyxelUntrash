@@ -28,9 +28,10 @@ sudo apt install build-essential gcc-arm-linux-gnueabihf bc bison flex libssl-de
 
 `make inputs` (`tools/fetch-inputs.sh`) downloads them and checks fixed SHA-256 sums.
 The firmware of the network engine (PFE) is not among them: every NAS542
-carries it in its stock kernel (NAND `kernel1`), and UntrashOS extracts it from
-there on the NAS at boot (`untrash-pfe-firmware`); the image ships no
-proprietary firmware.
+carries it in its stock kernel, and UntrashOS extracts it on the NAS
+(`untrash-pfe-firmware`): from the copy of the stock kernel that the install run
+saves to the stick, or from the stock kernel slot in the NAND; the image ships
+no proprietary firmware.
 
 | File | Source |
 |---|---|

@@ -1,8 +1,13 @@
-/* zt-slotinit -- /init of the UntrashOS slot initrd (system from a slot file).
+/* zt-slotinit -- /init of the UntrashOS slot initrd (system from a slot file
+ * or from a GPT slot partition).
  *
  * The loader (loader/slot/zt-loader) found a slot file (format untrash-slot-2,
- * compact: head + signed trailer), verified manifest, kernel, DTB and this
- * initrd, and started the slot kernel with kexec.  Kernel command line:
+ * compact: head + signed trailer) or a slot partition, verified manifest,
+ * kernel, DTB and this initrd, and started the slot kernel with kexec.
+ * Partition boot (way A): untrash.part=<GPT name> + untrash.verity= only; the
+ * initrd loads the modules (PCIe + ASM1061 AHCI for bays 2/4), waits for the
+ * partition, sets up dm-verity on it and mounts the root; no boot.env, so
+ * untrash-init finds the state on the same disk.  File boot command line:
  *   untrash.src=vfat:<FSUUID> | ext4:<FSUUID> | md:<MDUUID> | lv:<MDUUID>:<VG>/<LV>
  *                                 container filesystem holding the slot file
  *   untrash.file=/.untrash/slot-a.utslot     path inside the container
@@ -232,6 +237,57 @@ static void rm_tree(int dfd, dev_t rootdev)
 	closedir(d);
 }
 
+/* -> /dev/<name> of the partition with GPT name `name` (PARTNAME in uevent) */
+static int find_part(const char *name, char *dev, size_t n)
+{
+	DIR *d = opendir("/sys/class/block");
+	struct dirent *e;
+	int found = 0;
+	if (!d) return 0;
+	while (!found && (e = readdir(d))) {
+		char p[300], l[256];
+		if (e->d_name[0] == '.') continue;
+		snprintf(p, sizeof p, "/sys/class/block/%s/uevent", e->d_name);
+		FILE *f = fopen(p, "r");
+		if (!f) continue;
+		while (fgets(l, sizeof l, f)) {
+			l[strcspn(l, "\n")] = 0;
+			if (!strncmp(l, "PARTNAME=", 9) && !strcmp(l + 9, name)) {
+				snprintf(dev, n, "/dev/%s", e->d_name);
+				found = 1;
+				break;
+			}
+		}
+		fclose(f);
+	}
+	closedir(d);
+	return found;
+}
+
+/* Partition boot: dm-verity directly on the slot partition (data and hash
+ * tree as in the old dm-mod.create command line), erofs root, switch_root. */
+static void switch_to(const char *nr, const char *init, char **argv);
+static int boot_part(const char *name, unsigned long long nblk, const char *rh, const char *salt,
+		     const char *init, char **argv)
+{
+	char dev[300], table[1024], rootdev[64], nr[300];
+	int t;
+	for (t = 0; t < 600 && !find_part(name, dev, sizeof dev); t++)	/* 60 s */
+		usleep(100000);
+	if (t == 600) fail("slot partition not found within 60 s");
+	snprintf(table, sizeof table, "0 %llu verity 1 %s %s 4096 4096 %llu %llu sha256 %s %s",
+		 nblk * 8, dev, dev, nblk, nblk, rh, salt);
+	if (dm_create("untrash-root", "-", "ro", table)) fail("verity");
+	snprintf(rootdev, sizeof rootdev, "%s", zb_out);
+	path(nr, sizeof nr, "/newroot");
+	mkdir(nr, 0755);
+	if (mount(rootdev, nr, "erofs", MS_RDONLY, NULL)) die("mount erofs root");
+	say("root %s on %s (%s, verity %.16s) mounted", rootdev, dev, name, rh);
+	if (testmode) { say("TEST: stop before switch_root"); return 0; }
+	switch_to(nr, init, argv);
+	return 1;
+}
+
 int main(int argc, char **argv)
 {
 	char p[512], dev[300], fstype[8], host[300], nr[300];
@@ -265,14 +321,15 @@ int main(int argc, char **argv)
 	if (!testmode) load_modules();
 
 	const char *src = arg("untrash.src"), *file = arg("untrash.file"), *ver = arg("untrash.verity");
-	const char *slot = arg("untrash.slot"), *init = arg("init");
-	if (!src || !file || !ver) fail("untrash.src/file/verity missing on the command line");
+	const char *slot = arg("untrash.slot"), *init = arg("init"), *part = arg("untrash.part");
+	if (!ver || (!part && (!src || !file))) fail("untrash.part or untrash.src/file, and untrash.verity missing on the command line");
 	if (!slot) slot = "?";
 	if (!init) init = "/sbin/init";
 	unsigned long long nblk;
 	char rh[129], salt[129];
 	if (sscanf(ver, "%llu,%128[0-9a-f],%128[0-9a-f-]", &nblk, rh, salt) != 3) fail("bad untrash.verity");
 
+	if (part) return boot_part(part, nblk, rh, salt, init, argv);
 	container(src, dev, sizeof dev, fstype);
 	/* MS_MOVE refuses mounts below a shared parent (PC test; rootfs is private) */
 	mount(NULL, *T ? T : "/", NULL, MS_REC | MS_PRIVATE, NULL);
@@ -313,7 +370,13 @@ int main(int argc, char **argv)
 		   "ZT_HOST_DEV=%s\nZT_HOST_FS=%s\nZT_HOST_RW=%d\n", slot, src, file, dev, fstype, rw);
 	fclose(f);
 	if (testmode) { say("TEST: stop before switch_root"); return 0; }
+	switch_to(nr, init, argv);
+	return 1;
+}
 
+static void switch_to(const char *nr, const char *init, char **argv)
+{
+	char p[512];
 	for (const char *m = "/dev\0/proc\0/sys\0"; *m; m += strlen(m) + 1) {
 		snprintf(p, sizeof p, "%s%s", nr, m);
 		if (mount(m, p, NULL, MS_MOVE, NULL)) say("move %s: %s", m, strerror(errno));
@@ -329,5 +392,4 @@ int main(int argc, char **argv)
 	argv[0] = (char *)init;
 	execv(init, argv);
 	die("exec init");
-	return 1;
 }
