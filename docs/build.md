@@ -52,6 +52,13 @@ You provide one file yourself:
   The public key in `untrashos/slot/keys/` goes into loader and system; a NAS only
   accepts system images signed with a key it knows.
 
+- Optional **`inputs/keys/untrash-release.sec`**: the release key.  When it is
+  there, `make slot` signs with both keys: the first signature (dev key) is
+  the one the installed loaders check, the second one is read by the Desk
+  update and by newer loaders.  `ZT_SLOT_KEYS="a.sec b.sec"` sets the keys
+  and their order explicitly.  Keep an offline copy of every secret key: a
+  lost key cannot sign updates for the NAS that trust it.
+
 
 Optional, only for `make test` (the PartnerKey dry runs are skipped without
 them): `inputs/test/stock-env-mtd2.bin` (a stock Barebox environment dump),
