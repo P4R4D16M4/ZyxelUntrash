@@ -737,14 +737,21 @@ Success, Device connected, Device disconnected, Warning, Standby. Events you cha
 
 ![Sounds](img/d47-sounds.webp)
 
-| Option | Meaning |
+The editor works like a small loop-based music program. The buzzer plays one tone at a time
+(square wave, 100–4000 Hz), so blocks on the timeline never overlap.
+
+| Part | Meaning |
 |---|---|
-| Tempo | 25–400 %. Above 100 % notes get slower and longer. |
-| Tone table | Each row is a tone: name (C6, A#5, Bb4, or *Pause*), frequency in Hz, length in ms. **↑** moves a row, **+** inserts, **✕** deletes. |
-| + Tone, + Pause | Adds a row at the end. |
-| ▶ In the browser, ▶ On the NAS, ■ | Plays the melody, or stops it. |
-| Save, Back to built-in | Saves your melody, or returns to the original. |
-| Import sound set, Export as sound set | Loads or saves all melodies as a JSON file. |
+| ▶ In the browser, ▶ On the NAS, ■ | Plays the whole melody, or stops it. The browser plays exactly what the buzzer plays. |
+| Tempo | Beats per minute (40–300). Changing it makes the melody faster or slower; its shape stays. |
+| Grid | Note lengths snap to 1/8, 1/16 or 1/32 of a bar. |
+| Key, scale | The rows of the timeline: only the notes of this key and scale (major, minor, pentatonic, minor pentatonic, blues, chromatic). Older melodies open in the key that holds all their notes. |
+| Arrangement | The order of the patterns, each with its number of repeats (**−**, **+**). **◀** moves a pattern earlier, **✕** takes it out. **+ Pattern** adds an empty one, **Duplicate pattern** a copy of the pattern you edit. Click a pattern's name to edit it. |
+| Notes, Motifs | Drag a note (choose the octave with **‹ ›**) or a motif (Chime, Rise, Fall, Alarm, Trill, Beep) onto the timeline. |
+| Timeline | Click an empty place for a new note. Drag a block to move it in time and pitch, drag its right edge to change its length, double-click to remove it. The orange line is the end of the pattern; drag it to leave a rest before the next repeat. Keys: **← →** move, **↑ ↓** pitch, **Shift + ← →** length, **Delete** removes, **Ctrl + D** duplicates. |
+| Block below the timeline | Note, length and **modulation** of the selected block: *Staccato* (short, with a gap), *Vibrato* (depth, rate), *Slide* (glide by up to two octaves), *Fall* (drops an octave at the end), *Arpeggio* (major, minor, fifth or octave chord, speed). |
+| Save, Back to built-in | Saves your melody (at most 60 s), or returns to the original. |
+| Import sound set, Export as sound set | Loads or saves all melodies as a JSON file; the editor's patterns are part of it. |
 
 **Terminal** (administrators only) opens a shell on the NAS in the browser window.
 

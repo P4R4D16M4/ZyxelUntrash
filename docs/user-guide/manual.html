@@ -1733,37 +1733,55 @@ first start after way B), SSH, FTP, Media server, Desk.</p>
 <p><strong>Sounds</strong> edits the melodies the NAS buzzer plays for events: Start, Shut down, Error, Critical,
 Success, Device connected, Device disconnected, Warning, Standby. Events you changed are marked ★.</p>
 <p><img alt="Sounds" src="img/d47-sounds.webp" /></p>
+<p>The editor works like a small loop-based music program. The buzzer plays one tone at a time
+(square wave, 100–4000 Hz), so blocks on the timeline never overlap.</p>
 <table>
 <thead>
 <tr>
-<th>Option</th>
+<th>Part</th>
 <th>Meaning</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Tempo</td>
-<td>25–400 %. Above 100 % notes get slower and longer.</td>
-</tr>
-<tr>
-<td>Tone table</td>
-<td>Each row is a tone: name (C6, A#5, Bb4, or <em>Pause</em>), frequency in Hz, length in ms. <strong>↑</strong> moves a row, <strong>+</strong> inserts, <strong>✕</strong> deletes.</td>
-</tr>
-<tr>
-<td>+ Tone, + Pause</td>
-<td>Adds a row at the end.</td>
-</tr>
-<tr>
 <td>▶ In the browser, ▶ On the NAS, ■</td>
-<td>Plays the melody, or stops it.</td>
+<td>Plays the whole melody, or stops it. The browser plays exactly what the buzzer plays.</td>
+</tr>
+<tr>
+<td>Tempo</td>
+<td>Beats per minute (40–300). Changing it makes the melody faster or slower; its shape stays.</td>
+</tr>
+<tr>
+<td>Grid</td>
+<td>Note lengths snap to 1/8, 1/16 or 1/32 of a bar.</td>
+</tr>
+<tr>
+<td>Key, scale</td>
+<td>The rows of the timeline: only the notes of this key and scale (major, minor, pentatonic, minor pentatonic, blues, chromatic). Older melodies open in the key that holds all their notes.</td>
+</tr>
+<tr>
+<td>Arrangement</td>
+<td>The order of the patterns, each with its number of repeats (<strong>−</strong>, <strong>+</strong>). <strong>◀</strong> moves a pattern earlier, <strong>✕</strong> takes it out. <strong>+ Pattern</strong> adds an empty one, <strong>Duplicate pattern</strong> a copy of the pattern you edit. Click a pattern's name to edit it.</td>
+</tr>
+<tr>
+<td>Notes, Motifs</td>
+<td>Drag a note (choose the octave with <strong>‹ ›</strong>) or a motif (Chime, Rise, Fall, Alarm, Trill, Beep) onto the timeline.</td>
+</tr>
+<tr>
+<td>Timeline</td>
+<td>Click an empty place for a new note. Drag a block to move it in time and pitch, drag its right edge to change its length, double-click to remove it. The orange line is the end of the pattern; drag it to leave a rest before the next repeat. Keys: <strong>← →</strong> move, <strong>↑ ↓</strong> pitch, <strong>Shift + ← →</strong> length, <strong>Delete</strong> removes, <strong>Ctrl + D</strong> duplicates.</td>
+</tr>
+<tr>
+<td>Block below the timeline</td>
+<td>Note, length and <strong>modulation</strong> of the selected block: <em>Staccato</em> (short, with a gap), <em>Vibrato</em> (depth, rate), <em>Slide</em> (glide by up to two octaves), <em>Fall</em> (drops an octave at the end), <em>Arpeggio</em> (major, minor, fifth or octave chord, speed).</td>
 </tr>
 <tr>
 <td>Save, Back to built-in</td>
-<td>Saves your melody, or returns to the original.</td>
+<td>Saves your melody (at most 60 s), or returns to the original.</td>
 </tr>
 <tr>
 <td>Import sound set, Export as sound set</td>
-<td>Loads or saves all melodies as a JSON file.</td>
+<td>Loads or saves all melodies as a JSON file; the editor's patterns are part of it.</td>
 </tr>
 </tbody>
 </table>
