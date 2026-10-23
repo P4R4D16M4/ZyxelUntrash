@@ -19,7 +19,7 @@
 #       SHA256SUMS                                           (all of the above)
 # Flow on the NAS: start 1 = stock firmware runs the PartnerKey (backup,
 # loader, env, power off); start 2 = loader -> installer from the stick ->
-# browser http://zyxel-untrash.local/ -> way A/B/C (or D later).
+# browser http://untrash.local/ -> way A/B/C (or D later).
 # SOURCE_DATE_EPOCH (default: 2026-01-01) fixes timestamps and the volume id.
 set -Eeuo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -46,7 +46,7 @@ UntrashOS $VER for the Zyxel NAS542
    The stock firmware saves the flash (UNTRASH/install-*/flash/, checked),
    installs the UntrashOS loader and switches the NAS off (a few minutes).
 2. Switch the NAS on again (stick stays in). After a few minutes open
-   http://zyxel-untrash.local/ in a browser and choose:
+   http://untrash.local/ in a browser and choose:
    A  new install on a wiped disk
    B  keep data, users, shares and settings (UntrashOS replaces the stock OS)
    C  keep data, new users and settings

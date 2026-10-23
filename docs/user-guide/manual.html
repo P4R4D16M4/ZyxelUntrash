@@ -110,8 +110,9 @@ holds that NAS's backup and is marked as used. <strong>Use a freshly written sti
 and switches the NAS off. The NAS then starts the Zyxel firmware as before.</p>
 <h3 id="14-open-the-installer">1.4 Open the installer</h3>
 <p>Switch the NAS on again. The loader starts the installer from the stick. After a minute or two, open</p>
-<p><strong><a href="http://zyxel-untrash.local/">http://zyxel-untrash.local/</a></strong> in the browser. If your router does not resolve <code>.local</code> names,
-try <code>http://zyxel-untrash/</code> or the address your router lists for the NAS.</p>
+<p><strong><a href="http://untrash.local/">http://untrash.local/</a></strong> in the browser. If your router does not resolve <code>.local</code> names,
+try <code>http://untrash/</code> or the address your router lists for the NAS.  If another UntrashOS
+device already uses the name, the installer answers as <code>http://untrash-2.local/</code> (then <code>-3</code>, …).</p>
 <p><img alt="Installer: what was found on the stick and the disks" src="img/i01-installer-overview.webp" /></p>
 <table>
 <thead>
@@ -237,7 +238,7 @@ volume. Only <strong>way A</strong> erases a disk.</p>
 </tr>
 <tr>
 <td>Network name</td>
-<td>text, default <strong>zyxel-untrash</strong></td>
+<td>text, default <strong>untrash</strong></td>
 <td>1–15 letters, digits or hyphens. The NAS is reachable as <code>&lt;name&gt;.local</code>.</td>
 </tr>
 <tr>
@@ -306,8 +307,10 @@ firmware.</p>
 this guide.</p>
 </blockquote>
 <h2 id="2-first-start-and-sign-in">2. First start and sign-in</h2>
-<p>Open <code>http://&lt;network name&gt;.local/</code> (for example <code>http://zyxel-untrash.local/</code>), or the address
-of the NAS.</p>
+<p>Open <code>http://&lt;network name&gt;.local/</code> (for example <code>http://untrash.local/</code>), or the address
+of the NAS.  A NAS with the default name that finds <code>untrash</code> taken in the network becomes
+<code>untrash-2</code> (then <code>untrash-3</code>, …) and keeps that name from then on; a name you chose, or the
+name of the stock system (way B), is never changed.</p>
 <p><strong>After way A</strong> the NAS has no users yet. The first page asks for:</p>
 <table>
 <thead>
@@ -873,7 +876,7 @@ asks for a name and a description. Groups are used for share rights.</p>
 <tbody>
 <tr>
 <td>Host name</td>
-<td>default <strong>zyxel-untrash</strong></td>
+<td>default <strong>untrash</strong> (<code>untrash-2</code>, … if taken)</td>
 <td>Name of the NAS in the network (<code>&lt;host name&gt;.local</code>).</td>
 </tr>
 <tr>

@@ -77,8 +77,9 @@ and switches the NAS off. The NAS then starts the Zyxel firmware as before.
 
 Switch the NAS on again. The loader starts the installer from the stick. After a minute or two, open
 
-**<http://zyxel-untrash.local/>** in the browser. If your router does not resolve `.local` names,
-try `http://zyxel-untrash/` or the address your router lists for the NAS.
+**<http://untrash.local/>** in the browser. If your router does not resolve `.local` names,
+try `http://untrash/` or the address your router lists for the NAS.  If another UntrashOS
+device already uses the name, the installer answers as `http://untrash-2.local/` (then `-3`, …).
 
 ![Installer: what was found on the stick and the disks](img/i01-installer-overview.webp)
 
@@ -125,7 +126,7 @@ Choosing a way shows its **plan**, step by step. Nothing happens until you confi
 | Option | Choices | Meaning |
 |---|---|---|
 | Volume | as for way B | Where the UntrashOS files go. |
-| Network name | text, default **zyxel-untrash** | 1–15 letters, digits or hyphens. The NAS is reachable as `<name>.local`. |
+| Network name | text, default **untrash** | 1–15 letters, digits or hyphens. The NAS is reachable as `<name>.local`. |
 | New password for admin | text | At least 8 characters. Used for the Desk, SMB and SSH. |
 | Repeat password | text | Must match. |
 
@@ -169,8 +170,10 @@ firmware.
 
 ## 2. First start and sign-in
 
-Open `http://<network name>.local/` (for example `http://zyxel-untrash.local/`), or the address
-of the NAS.
+Open `http://<network name>.local/` (for example `http://untrash.local/`), or the address
+of the NAS.  A NAS with the default name that finds `untrash` taken in the network becomes
+`untrash-2` (then `untrash-3`, …) and keeps that name from then on; a name you chose, or the
+name of the stock system (way B), is never changed.
 
 **After way A** the NAS has no users yet. The first page asks for:
 
@@ -390,7 +393,7 @@ asks for a name and a description. Groups are used for share rights.
 
 | Option | Choices | Meaning |
 |---|---|---|
-| Host name | default **zyxel-untrash** | Name of the NAS in the network (`<host name>.local`). |
+| Host name | default **untrash** (`untrash-2`, … if taken) | Name of the NAS in the network (`<host name>.local`). |
 | NetBIOS name (SMB), Workgroup, Description | text | Name, workgroup and comment for Windows networking. |
 | LAN 1 (eth0), LAN 2 (eth1) | **automatic (DHCP)**, static | With *static*: Address/prefix (address and prefix length, for example `<LAN_IP>/24`), Gateway. MTU default **1500**. |
 | Link aggregation (bond0) | **off**, on | Bonds both ports. The address of the bond then applies instead of the two above. |
