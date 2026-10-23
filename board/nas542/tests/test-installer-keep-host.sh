@@ -6,7 +6,7 @@
 # md raid1 "basic" on p3, LVM vg_<uuid8> with vg_info_area and lv_<id>, stock
 # mkfs flags, sysvol marker, data) and a test stick directory (signed mini
 # slot.utslot, INSTALL marker, stock ugs_conf.db) go through the real
-# untrash-installer HTTP API (plan -> start "BEHALTEN" -> job done).  Checks:
+# untrash-installer HTTP API (plan -> start "KEEP" -> job done).  Checks:
 # /.untrash content (both slots byte-identical to the stick, state.img, swap
 # signature, bootstate, stock-config, takeover-pending), user data unchanged,
 # nothing left assembled, INSTALL marker gone; then the loader (dry run)
@@ -123,8 +123,8 @@ api() { curl -s -X POST -d "$2" "http://127.0.0.1:$PORT/api/$1"; }
 PLAN=$(api plan '{"mode":"B"}')
 echo "$PLAN" | python3 -c 'import json,sys; p=json.load(sys.stdin); [print("     plan:", s) for s in p["steps"]]; [print("     problem:", s) for s in p["problems"]]; print("     volumes:", [(v["key"], v["name"], v["sysvol"]) for v in p["volumes"] or []])'
 VKEY=$(echo "$PLAN" | python3 -c 'import json,sys; print(json.load(sys.stdin)["volumes"][0]["key"])')
-check "plan: no problems, phrase BEHALTEN, sysvol first" "echo '$PLAN' | python3 -c 'import json,sys; p=json.load(sys.stdin); sys.exit(0 if not p[\"problems\"] and p[\"phrase\"]==\"BEHALTEN\" and p[\"volumes\"][0][\"sysvol\"] else 1)'"
-api start "{\"mode\":\"B\",\"volume\":\"$VKEY\",\"phrase\":\"BEHALTEN\"}" >/dev/null
+check "plan: no problems, phrase KEEP, sysvol first" "echo '$PLAN' | python3 -c 'import json,sys; p=json.load(sys.stdin); sys.exit(0 if not p[\"problems\"] and p[\"phrase\"]==\"KEEP\" and p[\"volumes\"][0][\"sysvol\"] else 1)'"
+api start "{\"mode\":\"B\",\"volume\":\"$VKEY\",\"phrase\":\"KEEP\"}" >/dev/null
 for i in $(seq 120); do st=$(curl -s "http://127.0.0.1:$PORT/api/job" | python3 -c 'import json,sys; print(json.load(sys.stdin)["state"])'); [[ $st == done || $st == failed ]] && break; sleep 1; done
 curl -s "http://127.0.0.1:$PORT/api/job" | python3 -c 'import json,sys; [print("     |", l) for l in json.load(sys.stdin)["log"]]' | grep -v '^     | [0-9:]* \$ \|^     | [0-9:]*   ' | tail -12
 check "job done" "[ $st = done ]"
@@ -152,10 +152,10 @@ INST
 PLAN=$(api plan '{"mode":"C"}')
 echo "$PLAN" | python3 -c 'import json,sys; p=json.load(sys.stdin); [print("     plan:", s) for s in p["steps"]]; [print("     problem:", s) for s in p["problems"]]'
 check "plan C lists the share Medien" "echo '$PLAN' | grep -q 'Medien'"
-R=$(api start "{\"mode\":\"C\",\"volume\":\"$VKEY\",\"phrase\":\"BEHALTEN\",\"netname\":\"testnas\",\"password\":\"kurz\",\"password2\":\"kurz\"}")
+R=$(api start "{\"mode\":\"C\",\"volume\":\"$VKEY\",\"phrase\":\"KEEP\",\"netname\":\"testnas\",\"password\":\"kurz\",\"password2\":\"kurz\"}")
 check "short password refused" "echo '$R' | grep -q '8 Zeichen'"
 PW='Geheim-Test-42'
-api start "{\"mode\":\"C\",\"volume\":\"$VKEY\",\"phrase\":\"BEHALTEN\",\"netname\":\"testnas\",\"password\":\"$PW\",\"password2\":\"$PW\"}" >/dev/null
+api start "{\"mode\":\"C\",\"volume\":\"$VKEY\",\"phrase\":\"KEEP\",\"netname\":\"testnas\",\"password\":\"$PW\",\"password2\":\"$PW\"}" >/dev/null
 wait_job
 check "job C done" "[ $st = done ]"
 check "password not in the job log" "! curl -s http://127.0.0.1:$PORT/api/job | grep -q '$PW'"
@@ -201,8 +201,8 @@ head -c 1048576 /dev/urandom >"$W/tail.bin"; dd if="$W/tail.bin" of="$DISK2" bs=
 TAIL=$(sha256sum <"$W/tail.bin" | cut -c1-64)
 INST
 PLAN=$(api plan "{\"mode\":\"A\",\"disk\":\"$N2\"}")
-check "plan A: phrase LÖSCHEN $N2, no problems" "echo '$PLAN' | python3 -c 'import json,sys; p=json.load(sys.stdin); sys.exit(0 if not p[\"problems\"] and p[\"phrase\"]==\"LÖSCHEN $N2\" else 1)'"
-api start "{\"mode\":\"A\",\"disk\":\"$N2\",\"phrase\":\"LÖSCHEN $N2\"}" >/dev/null
+check "plan A: phrase DELETE $N2, no problems" "echo '$PLAN' | python3 -c 'import json,sys; p=json.load(sys.stdin); sys.exit(0 if not p[\"problems\"] and p[\"phrase\"]==\"DELETE $N2\" else 1)'"
+api start "{\"mode\":\"A\",\"disk\":\"$N2\",\"phrase\":\"DELETE $N2\"}" >/dev/null
 wait_job
 check "job A done" "[ $st = done ]"
 kill "$SRV"; SRV=; sleep 1
