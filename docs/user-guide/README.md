@@ -751,8 +751,17 @@ restarts. All connections are closed.
 
 ![Switch off or restart](img/d50-power-dialog.webp)
 
-**Your user name** (top bar): change the *language of this browser* (— as system —, English, Deutsch,
-Français) or **Sign out**.
+**Your user name** (top bar) opens **Account**: change the *language of this browser* (— as system —,
+English, Deutsch, Français), the **Appearance**, or **Sign out**.
+
+**Appearance** belongs to your user: it is stored on the NAS and follows you to every browser you
+sign in with. It applies at once.
+
+| Setting | Values | Meaning |
+|---|---|---|
+| Theme | Automatic (as the system), **Dark**, Light, High contrast | *Automatic* follows the light/dark and "more contrast" setting of your computer or phone. *High contrast*: black background, white text, strong borders, no transparency or wallpaper. |
+| Colour vision | **Normal colour vision**, Red-weak (protanopia), Green-weak (deuteranopia), Blue-weak (tritanopia), No colour vision (achromatopsia) | Other colours for states (healthy, warning, error, information) that stay apart for that kind of colour vision, plus a symbol on each state (✓ ! ✕ i) and stripes on warning and error bars, so that nothing depends on colour alone. |
+| Reduce motion | **off** / on | No animations (also on when your system asks for reduced motion). |
 
 ## 17. Working as a normal user
 
@@ -763,7 +772,7 @@ allow.
 ![Files as user anna](img/d52-user-anna-files.webp)
 
 **My account**: *Current password*, *New password*, *Repeat*, then **Change password**. **Sign out**
-ends the session.
+ends the session. **Appearance** below works as described in [section 3](#3-working-with-the-desk).
 
 ## 18. Back to the Zyxel firmware
 
