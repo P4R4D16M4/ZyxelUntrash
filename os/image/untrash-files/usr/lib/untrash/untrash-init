@@ -68,8 +68,11 @@ if [ "$ZT_BOOT" = file ]; then
 	[ "$ZT_HOST_RW" = 1 ] && [ -f "$U/swap.img" ] && SWAPFILE=$U/swap.img
 	log "slot file $ZT_FILE on $ZT_HOST_DEV ($ZT_HOST_FS) slot=$SLOT state=${STATE:-none}"
 else
-	# The slot this kernel was started from (loader substitutes it in the cmdline).
-	SLOT=$(sed -n 's/.*dm-mod\.waitfor=PARTLABEL=\([^ ]*\).*/\1/p' /proc/cmdline)
+	# The slot this kernel was started from (loader substitutes it in the
+	# cmdline): untrash.part= (through the slot initrd) or dm-mod.waitfor=
+	# (loaders before 1.0.3, no initrd).
+	SLOT=$(sed -n 's/.*untrash\.part=\([^ ]*\).*/\1/p' /proc/cmdline)
+	[ -n "$SLOT" ] || SLOT=$(sed -n 's/.*dm-mod\.waitfor=PARTLABEL=\([^ ]*\).*/\1/p' /proc/cmdline)
 	i=0
 	while [ $i -lt 10 ]; do
 		if [ -n "$SLOT" ] && S=$(part_dev "$SLOT"); then

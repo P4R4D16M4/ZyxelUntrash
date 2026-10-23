@@ -201,7 +201,14 @@ try_slot2() {
 		[ "$(sha256sum $R/$p | cut -d' ' -f1)" = "$(m ${p}_sha256)" ] ||
 			{ log "SLOT $1 (slot-2) $p hash mismatch"; return 1; }
 	done
-	if [ "$3" = part ]; then
+	if [ "$3" = part ] && [ -f $R/initrd ] && [ -n "$(m cmdline_part)" ]; then
+		# through the slot initrd: it loads PCIe + ASM1061 AHCI (bays 2/4)
+		# before it looks for the partition (zt-slotinit, untrash.part=)
+		cmd=$(m cmdline_part | sed "s/@SLOT@/$1/g")
+		log "SLOT $1 $2 version=$(m version) verity=$(m verity_root | cut -c1-16) verified, kexec load (initrd)"
+		kexec -l $R/kernel --dtb=$R/dtb --initrd=$R/initrd --command-line="$cmd" ||
+			{ log "SLOT $1 kexec load failed"; return 1; }
+	elif [ "$3" = part ]; then
 		cmd=$(m cmdline | sed "s/@SLOT@/$1/g")
 		log "SLOT $1 $2 version=$(m version) verity=$(m verity_root | cut -c1-16) verified, kexec load"
 		kexec -l $R/kernel --dtb=$R/dtb --command-line="$cmd" || { log "SLOT $1 kexec load failed"; return 1; }

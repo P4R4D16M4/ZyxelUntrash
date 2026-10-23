@@ -10,10 +10,13 @@
 #   size-4096           Ed25519 signature (64 bytes) ┘ loader with dd
 #
 # The manifest pins kernel, DTB, initrd and the verity root hash.  `cmdline`
-# (partition boot, no initrd) contains @SLOT@, which the loader replaces with
-# the GPT name it booted from.  `cmdline_file` (slot as a file on a stick
-# or a stock volume) is used with the initrd; the loader appends untrash.src=,
-# untrash.file= and untrash.slot= (os/loader/zt-slotinit.c).
+# (partition boot, no initrd: loaders before 1.0.3) contains @SLOT@, which the
+# loader replaces with the GPT name it booted from.  `cmdline_part` (partition
+# boot through the initrd, so PCIe and the ASM1061 AHCI of bays 2/4 are loaded
+# before the root is looked up) has untrash.part=@SLOT@ instead.
+# `cmdline_file` (slot as a file on a stick or a stock volume) is used with the
+# initrd; the loader appends untrash.src=, untrash.file= and untrash.slot=
+# (os/loader/zt-slotinit.c).
 # A slot FILE (*.utslot, mk-slotfile.sh) is the head (0 .. END) plus the
 # trailer; the loader finds the trailer at file size - 8192.
 #
@@ -215,6 +218,7 @@ verity_root=$RH
 verity_salt=$SALT
 cmdline=console=ttyS0,115200n8 clk_ignore_unused$MAXCPUS loglevel=6 panic=10 printk.devkmsg=on systemd.journald.forward_to_kmsg=1 root=/dev/dm-0 rootfstype=erofs ro rootwait init=/usr/lib/untrash/untrash-init dm-mod.waitfor=PARTLABEL=@SLOT@ dm-mod.create="untrash-root,,,ro,0 $SECTORS verity 1 PARTLABEL=@SLOT@ PARTLABEL=@SLOT@ 4096 4096 $N $N sha256 $RH $SALT"
 cmdline_file=console=ttyS0,115200n8 clk_ignore_unused$MAXCPUS loglevel=6 panic=10 printk.devkmsg=on systemd.journald.forward_to_kmsg=1 init=/usr/lib/untrash/untrash-init untrash.verity=$N,$RH,$SALT
+cmdline_part=console=ttyS0,115200n8 clk_ignore_unused$MAXCPUS loglevel=6 panic=10 printk.devkmsg=on systemd.journald.forward_to_kmsg=1 init=/usr/lib/untrash/untrash-init untrash.verity=$N,$RH,$SALT untrash.part=@SLOT@
 M
 gcc -O2 -I"$ROOT/third_party/tweetnacl" -o "$W/zt-sig" "$ROOT/os/loader/zt-sig.c" "$ROOT/third_party/tweetnacl/tweetnacl.c"
 "$W/zt-sig" sign "$SEC" "$W/manifest" "$W/manifest.sig"
