@@ -204,7 +204,7 @@ After way C, use `admin` and the password you chose in the installer.
 |---|---|
 | **Top bar** | Name of the active window; current activity (for example a media scan, streams, a running backup or update); **RAID** state; your **user name** (click it to change the language of this browser or to sign out); date and time. |
 | **Desktop icons** | The first apps, opened with a click. |
-| **Dock** | All apps. Hover over an icon to see its name. The **power button** at the right end switches the NAS off or restarts it ([section 16](#16-status-logs-and-system-tools)). |
+| **Dock** | All apps. **Overview** and **Files** sit directly in the dock; the other apps are grouped in **Data**, **Network**, **Media**, **System** and **Help**: a click on a group opens its apps. Hover over an icon to see its name. The **power button** at the right end switches the NAS off or restarts it ([section 16](#16-status-logs-and-system-tools)). |
 | **Windows** | Move them by the title bar and resize them at the edges and corners. **▢** maximizes, and so does a double click on the title bar. **✕** closes. Each window keeps its size in your browser. |
 
 **Overview** shows the installed version, uptime and load, the memory in use, each volume with its
@@ -795,6 +795,23 @@ next restart of this NAS.
   administrator you trust with the data.
 - **End** (either side): your volume stays as it is and is mounted without the mirror from the next
   restart on; the partner deletes its copy.
+
+**UntrashApp.** The UntrashApp for phones (in development, not released yet) joins UntrashMesh
+and signs in on the NAS as one Desk user. An admin pairs it under **UntrashMesh → Pair the
+UntrashApp**: choose the user, then scan the QR code with the app (valid once, for one hour). On
+other NAS of the mesh an admin links the app to a user there with **Link…**.
+
+Under **Account**, every user with a paired app chooses how to sign in (the password is needed to
+change it):
+
+| Sign in with | What happens |
+|---|---|
+| Password only | as before |
+| Password or the UntrashApp | on the sign-in page, **Sign in with the UntrashApp** shows a number; choose the same number in the app |
+| Password and the UntrashApp | after the password the app must confirm as well; installing updates, deleting users and similar actions also need a confirmation in the app |
+
+Lost phone: an administrator chooses **Reset to password** for that user under **Users**. For the
+admin account, the RESET button on the NAS (admin password reset) also resets the sign-in.
 
 **Feedback** prepares a bug report or a suggestion as a GitHub issue. Nothing is sent
 automatically.

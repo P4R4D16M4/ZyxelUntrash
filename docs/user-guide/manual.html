@@ -380,7 +380,7 @@ After way C, use <code>admin</code> and the password you chose in the installer.
 </tr>
 <tr>
 <td><strong>Dock</strong></td>
-<td>All apps. Hover over an icon to see its name. The <strong>power button</strong> at the right end switches the NAS off or restarts it (<a href="#16-status-logs-and-system-tools">section 16</a>).</td>
+<td>All apps. <strong>Overview</strong> and <strong>Files</strong> sit directly in the dock; the other apps are grouped in <strong>Data</strong>, <strong>Network</strong>, <strong>Media</strong>, <strong>System</strong> and <strong>Help</strong>: a click on a group opens its apps. Hover over an icon to see its name. The <strong>power button</strong> at the right end switches the NAS off or restarts it (<a href="#16-status-logs-and-system-tools">section 16</a>).</td>
 </tr>
 <tr>
 <td><strong>Windows</strong></td>
@@ -1849,6 +1849,36 @@ next restart of this NAS.</p>
 <li><strong>End</strong> (either side): your volume stays as it is and is mounted without the mirror from the next
   restart on; the partner deletes its copy.</li>
 </ul>
+<p><strong>UntrashApp.</strong> The UntrashApp for phones (in development, not released yet) joins UntrashMesh
+and signs in on the NAS as one Desk user. An admin pairs it under <strong>UntrashMesh → Pair the
+UntrashApp</strong>: choose the user, then scan the QR code with the app (valid once, for one hour). On
+other NAS of the mesh an admin links the app to a user there with <strong>Link…</strong>.</p>
+<p>Under <strong>Account</strong>, every user with a paired app chooses how to sign in (the password is needed to
+change it):</p>
+<table>
+<thead>
+<tr>
+<th>Sign in with</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Password only</td>
+<td>as before</td>
+</tr>
+<tr>
+<td>Password or the UntrashApp</td>
+<td>on the sign-in page, <strong>Sign in with the UntrashApp</strong> shows a number; choose the same number in the app</td>
+</tr>
+<tr>
+<td>Password and the UntrashApp</td>
+<td>after the password the app must confirm as well; installing updates, deleting users and similar actions also need a confirmation in the app</td>
+</tr>
+</tbody>
+</table>
+<p>Lost phone: an administrator chooses <strong>Reset to password</strong> for that user under <strong>Users</strong>. For the
+admin account, the RESET button on the NAS (admin password reset) also resets the sign-in.</p>
 <p><strong>Feedback</strong> prepares a bug report or a suggestion as a GitHub issue. Nothing is sent
 automatically.</p>
 <p><img alt="Feedback" src="img/d49-feedback.webp" /></p>
