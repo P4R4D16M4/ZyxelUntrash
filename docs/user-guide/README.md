@@ -796,6 +796,16 @@ next restart of this NAS.
 - **End** (either side): your volume stays as it is and is mounted without the mirror from the next
   restart on; the partner deletes its copy.
 
+**Office.** Documents stay on the NAS and are edited in the browser by an office server that runs
+elsewhere (Collabora Online, Nextcloud Office or ONLYOFFICE; it needs more memory than the NAS has).
+Under **Settings → Office** an admin enters the address of the office server and the address under
+which that server reaches this NAS (for example `http://untrash.local`, or `http://<name>.mesh`
+over UntrashMesh). **Save and check** lists the document types the office server supports. Files
+then shows **Open in Office** for them; the document opens in a new tab and is saved back to the
+NAS. Everyone keeps the rights of the share: with read-only access the document opens read-only.
+The office server must allow this NAS as storage; see its documentation. Without this setting, a
+Nextcloud can also mount the shares as External storage (WebDAV, see Services, or SMB).
+
 **UntrashApp.** The UntrashApp for phones (in development, not released yet) joins UntrashMesh
 and signs in on the NAS as one Desk user. An admin pairs it under **UntrashMesh → Pair the
 UntrashApp**: choose the user, then scan the QR code with the app (valid once, for one hour). On
