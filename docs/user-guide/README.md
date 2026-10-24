@@ -218,19 +218,36 @@ Administrators see all apps. Normal users see **Files**, **Channels**, **Manual*
 
 ![Files: a folder in the Photos share](img/d03-files-photos.webp)
 
-Pick a share on the left and click folders to open them. The path above the list leads back.
+Pick a share on the left. The path above the list leads back.
 Shares whose volume is missing are listed under *Volume missing* and cannot be opened.
+
+**Selecting.** Click a row to select it; **Ctrl**+click adds or removes one, **Shift**+click selects a
+range, the box in the header selects all. Click a name (or double-click the row) to open it. The
+column headers sort by name, size or date.
 
 | Button | Meaning |
 |---|---|
 | **New folder** | Creates a folder in the current folder. |
-| **Upload** | Uploads files from your device into the current folder. |
+| **Upload** / **Upload a folder** | Uploads files, or a whole folder with its subfolders, into the current folder. You can also drag files and folders from your computer onto the list (or onto a folder in it). The progress shows below the list. |
+| **Download** | One file as it is; a folder or several items as one ZIP file. |
+| **Cut**, **Copy**, **Paste** | Copies or moves the selection, also into another share: open the target folder and choose **Paste**. When names already exist you choose: keep both (the new ones get a number, "name (2)"), replace, or skip. Large copies run on the NAS in the background; the progress shows below the list and can be cancelled. |
+| **Rename** | Renames the selected item. |
+| **Delete** | Deletes the selection after a confirmation. On a share with a recycle bin the items go to its folder `recycle` (as for deletions over the network); inside `recycle`, or without a recycle bin, they are deleted permanently. |
+| **Filter** field | Filters the current folder while you type; **Enter** searches the subfolders too. A click on a hit opens its folder. |
 | **Exports** | Running and finished exports. |
 | **Shared links** | Your download links with their expiry: **Copy** the address again or **Delete** the link. Administrators see the links of all users. |
-| **Export** (per row) | Copies or converts a file or folder, see below. |
-| **Share…** (per row) | Creates a download link, see below. |
-| **As share** (per folder, admins only) | Makes the folder a share of its own ([section 5](#5-shares)). |
-| **Rename**, **Delete** (per row) | Renames, or deletes permanently after a confirmation. (The recycle bin applies to deletions over the network, for example from Windows.) |
+
+**More** (**⋯** at the end of a row, or a right click) has the same actions plus **Share link…** (a
+download link, see below), **Export…** (copy or convert, see below), **As share…** (folders, admins
+only: a share of its own, [section 5](#5-shares)) and **Properties** (with the size of a folder).
+Drag items onto a folder (or onto a part of the path above the list) to move them there; hold **Ctrl**
+to copy instead.
+
+| Key | Action |
+|---|---|
+| Ctrl+A, Ctrl+C, Ctrl+X, Ctrl+V | select all, copy, cut, paste |
+| Delete, F2, Enter | delete, rename, open |
+| Backspace, Escape, ↑ ↓ | up one folder, clear the selection, move the selection |
 
 Clicking a file opens it:
 

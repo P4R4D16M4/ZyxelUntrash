@@ -395,8 +395,11 @@ services (SMB, SSH, FTP, NFS, media server, time, disk spin-down, mDNS).</p>
 (<a href="#17-working-as-a-normal-user">section 17</a>).</p>
 <h2 id="4-files">4. Files</h2>
 <p><img alt="Files: a folder in the Photos share" src="img/d03-files-photos.webp" /></p>
-<p>Pick a share on the left and click folders to open them. The path above the list leads back.
+<p>Pick a share on the left. The path above the list leads back.
 Shares whose volume is missing are listed under <em>Volume missing</em> and cannot be opened.</p>
+<p><strong>Selecting.</strong> Click a row to select it; <strong>Ctrl</strong>+click adds or removes one, <strong>Shift</strong>+click selects a
+range, the box in the header selects all. Click a name (or double-click the row) to open it. The
+column headers sort by name, size or date.</p>
 <table>
 <thead>
 <tr>
@@ -410,8 +413,28 @@ Shares whose volume is missing are listed under <em>Volume missing</em> and cann
 <td>Creates a folder in the current folder.</td>
 </tr>
 <tr>
-<td><strong>Upload</strong></td>
-<td>Uploads files from your device into the current folder.</td>
+<td><strong>Upload</strong> / <strong>Upload a folder</strong></td>
+<td>Uploads files, or a whole folder with its subfolders, into the current folder. You can also drag files and folders from your computer onto the list (or onto a folder in it). The progress shows below the list.</td>
+</tr>
+<tr>
+<td><strong>Download</strong></td>
+<td>One file as it is; a folder or several items as one ZIP file.</td>
+</tr>
+<tr>
+<td><strong>Cut</strong>, <strong>Copy</strong>, <strong>Paste</strong></td>
+<td>Copies or moves the selection, also into another share: open the target folder and choose <strong>Paste</strong>. When names already exist you choose: keep both (the new ones get a number, "name (2)"), replace, or skip. Large copies run on the NAS in the background; the progress shows below the list and can be cancelled.</td>
+</tr>
+<tr>
+<td><strong>Rename</strong></td>
+<td>Renames the selected item.</td>
+</tr>
+<tr>
+<td><strong>Delete</strong></td>
+<td>Deletes the selection after a confirmation. On a share with a recycle bin the items go to its folder <code>recycle</code> (as for deletions over the network); inside <code>recycle</code>, or without a recycle bin, they are deleted permanently.</td>
+</tr>
+<tr>
+<td><strong>Filter</strong> field</td>
+<td>Filters the current folder while you type; <strong>Enter</strong> searches the subfolders too. A click on a hit opens its folder.</td>
 </tr>
 <tr>
 <td><strong>Exports</strong></td>
@@ -421,21 +444,32 @@ Shares whose volume is missing are listed under <em>Volume missing</em> and cann
 <td><strong>Shared links</strong></td>
 <td>Your download links with their expiry: <strong>Copy</strong> the address again or <strong>Delete</strong> the link. Administrators see the links of all users.</td>
 </tr>
+</tbody>
+</table>
+<p><strong>More</strong> (<strong>⋯</strong> at the end of a row, or a right click) has the same actions plus <strong>Share link…</strong> (a
+download link, see below), <strong>Export…</strong> (copy or convert, see below), <strong>As share…</strong> (folders, admins
+only: a share of its own, <a href="#5-shares">section 5</a>) and <strong>Properties</strong> (with the size of a folder).
+Drag items onto a folder (or onto a part of the path above the list) to move them there; hold <strong>Ctrl</strong>
+to copy instead.</p>
+<table>
+<thead>
 <tr>
-<td><strong>Export</strong> (per row)</td>
-<td>Copies or converts a file or folder, see below.</td>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ctrl+A, Ctrl+C, Ctrl+X, Ctrl+V</td>
+<td>select all, copy, cut, paste</td>
 </tr>
 <tr>
-<td><strong>Share…</strong> (per row)</td>
-<td>Creates a download link, see below.</td>
+<td>Delete, F2, Enter</td>
+<td>delete, rename, open</td>
 </tr>
 <tr>
-<td><strong>As share</strong> (per folder, admins only)</td>
-<td>Makes the folder a share of its own (<a href="#5-shares">section 5</a>).</td>
-</tr>
-<tr>
-<td><strong>Rename</strong>, <strong>Delete</strong> (per row)</td>
-<td>Renames, or deletes permanently after a confirmation. (The recycle bin applies to deletions over the network, for example from Windows.)</td>
+<td>Backspace, Escape, ↑ ↓</td>
+<td>up one folder, clear the selection, move the selection</td>
 </tr>
 </tbody>
 </table>
