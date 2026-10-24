@@ -1786,9 +1786,52 @@ Success, Device connected, Device disconnected, Warning, Standby. Events you cha
 </tbody>
 </table>
 <p><strong>Terminal</strong> (administrators only) opens a shell on the NAS in the browser window.</p>
-<p><strong>UntrashMesh</strong> is a preview of a coming feature: several UntrashOS devices form one encrypted
-network for mirrored shares, mutual off-site backups and access on the road. It will arrive with
-an update.</p>
+<p><strong>UntrashMesh</strong> connects several UntrashOS devices to one encrypted network (WireGuard), at home and
+over the internet. No cloud provider and no fixed IP address are needed: every device keeps an
+address book of the others, and a device whose address changes tells all members at once; members
+also pass such news on, so it reaches devices the changed one cannot reach itself.</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Create the mesh</td>
+<td>This NAS starts a mesh and is its admin.</td>
+</tr>
+<tr>
+<td>Invite a device</td>
+<td>Shows an invitation text (valid once, 24 hours). Give it to the other device.</td>
+</tr>
+<tr>
+<td>Join a mesh</td>
+<td>Paste an invitation. The device becomes a member.</td>
+</tr>
+<tr>
+<td>Share… (per member)</td>
+<td>Offers shares of this NAS to that member, <strong>read only</strong> or <strong>read/write</strong>.</td>
+</tr>
+<tr>
+<td>Remove (admins)</td>
+<td>Takes a member out; its connections and offered shares end.</td>
+</tr>
+<tr>
+<td>Leave the mesh</td>
+<td>This NAS leaves; to come back it needs a new invitation.</td>
+</tr>
+</tbody>
+</table>
+<p>Members reach each other by name: <code>\\&lt;name&gt;.mesh</code> for shares, <code>http://&lt;name&gt;.mesh</code> for the Desk.
+Over the internet at least one side needs a router with UPnP, or a forwarding of UDP port 51820;
+UntrashOS asks the router itself when UPnP is on.</p>
+<p><strong>Partner volumes (co-op mode).</strong> Shares a member offers appear on this NAS as partner volumes:
+under <strong>Storage</strong> and in the <strong>UntrashMesh</strong> window. Under <strong>Shares</strong> you can make shares on them for
+your own users, like on any volume. The member decides what you may do (read only or read/write);
+partner volumes are reachable only over UntrashMesh, and they are unavailable while the member is
+offline.</p>
 <p><strong>Feedback</strong> prepares a bug report or a suggestion as a GitHub issue. Nothing is sent
 automatically.</p>
 <p><img alt="Feedback" src="img/d49-feedback.webp" /></p>

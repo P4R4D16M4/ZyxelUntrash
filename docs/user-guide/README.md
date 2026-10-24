@@ -755,9 +755,29 @@ The editor works like a small loop-based music program. The buzzer plays one ton
 
 **Terminal** (administrators only) opens a shell on the NAS in the browser window.
 
-**UntrashMesh** is a preview of a coming feature: several UntrashOS devices form one encrypted
-network for mirrored shares, mutual off-site backups and access on the road. It will arrive with
-an update.
+**UntrashMesh** connects several UntrashOS devices to one encrypted network (WireGuard), at home and
+over the internet. No cloud provider and no fixed IP address are needed: every device keeps an
+address book of the others, and a device whose address changes tells all members at once; members
+also pass such news on, so it reaches devices the changed one cannot reach itself.
+
+| Action | What happens |
+|---|---|
+| Create the mesh | This NAS starts a mesh and is its admin. |
+| Invite a device | Shows an invitation text (valid once, 24 hours). Give it to the other device. |
+| Join a mesh | Paste an invitation. The device becomes a member. |
+| Share… (per member) | Offers shares of this NAS to that member, **read only** or **read/write**. |
+| Remove (admins) | Takes a member out; its connections and offered shares end. |
+| Leave the mesh | This NAS leaves; to come back it needs a new invitation. |
+
+Members reach each other by name: `\\<name>.mesh` for shares, `http://<name>.mesh` for the Desk.
+Over the internet at least one side needs a router with UPnP, or a forwarding of UDP port 51820;
+UntrashOS asks the router itself when UPnP is on.
+
+**Partner volumes (co-op mode).** Shares a member offers appear on this NAS as partner volumes:
+under **Storage** and in the **UntrashMesh** window. Under **Shares** you can make shares on them for
+your own users, like on any volume. The member decides what you may do (read only or read/write);
+partner volumes are reachable only over UntrashMesh, and they are unavailable while the member is
+offline.
 
 **Feedback** prepares a bug report or a suggestion as a GitHub issue. Nothing is sent
 automatically.
