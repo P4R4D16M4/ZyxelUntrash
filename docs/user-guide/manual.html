@@ -1832,6 +1832,23 @@ under <strong>Storage</strong> and in the <strong>UntrashMesh</strong> window. U
 your own users, like on any volume. The member decides what you may do (read only or read/write);
 partner volumes are reachable only over UntrashMesh, and they are unavailable while the member is
 offline.</p>
+<p><strong>Off-site mirror.</strong> A member can keep a complete copy of a data volume of this NAS (RAID 1 over
+UntrashMesh), so the data survives a fire or a theft at one place. In the <strong>UntrashMesh</strong> window
+choose <strong>Mirror a volume…</strong>, the volume and the member. The member's admin must agree and choose a
+volume for the copy, with as much free space as your volume is large. The mirror starts with the
+next restart of this NAS.</p>
+<ul>
+<li>Writes go to your volume first and to the partner as fast as the line allows. While the partner
+  is not reachable, the changes are kept and sent when it is back.</li>
+<li>Your volume keeps its format: without the mirror it is mounted as before.</li>
+<li>If the mirror cannot start at a restart, the volume is mounted directly and the copy is sent
+  again completely once the partner is reachable (<strong>needs a full resync</strong>).</li>
+<li>The volume of the running system cannot be mirrored.</li>
+<li>The copy is not encrypted on the partner (the connection is): choose a member whose
+  administrator you trust with the data.</li>
+<li><strong>End</strong> (either side): your volume stays as it is and is mounted without the mirror from the next
+  restart on; the partner deletes its copy.</li>
+</ul>
 <p><strong>Feedback</strong> prepares a bug report or a suggestion as a GitHub issue. Nothing is sent
 automatically.</p>
 <p><img alt="Feedback" src="img/d49-feedback.webp" /></p>

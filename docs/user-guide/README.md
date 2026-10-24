@@ -779,6 +779,23 @@ your own users, like on any volume. The member decides what you may do (read onl
 partner volumes are reachable only over UntrashMesh, and they are unavailable while the member is
 offline.
 
+**Off-site mirror.** A member can keep a complete copy of a data volume of this NAS (RAID 1 over
+UntrashMesh), so the data survives a fire or a theft at one place. In the **UntrashMesh** window
+choose **Mirror a volume…**, the volume and the member. The member's admin must agree and choose a
+volume for the copy, with as much free space as your volume is large. The mirror starts with the
+next restart of this NAS.
+
+- Writes go to your volume first and to the partner as fast as the line allows. While the partner
+  is not reachable, the changes are kept and sent when it is back.
+- Your volume keeps its format: without the mirror it is mounted as before.
+- If the mirror cannot start at a restart, the volume is mounted directly and the copy is sent
+  again completely once the partner is reachable (**needs a full resync**).
+- The volume of the running system cannot be mirrored.
+- The copy is not encrypted on the partner (the connection is): choose a member whose
+  administrator you trust with the data.
+- **End** (either side): your volume stays as it is and is mounted without the mirror from the next
+  restart on; the partner deletes its copy.
+
 **Feedback** prepares a bug report or a suggestion as a GitHub issue. Nothing is sent
 automatically.
 
