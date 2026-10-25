@@ -107,6 +107,14 @@ ad filter (real dnsmasq), the watchdog keeper, sounds and the translations.
 `TOOLROOT`, `APACHEROOT` and `RCLONEROOT` are unpacked Debian packages
 (`apt-get download` + `dpkg-deb -x`; nothing is installed).
 
+**User guide.** `make manual` builds `docs/user-guide/manual.html` and the
+PDF. The Desk screenshots (`docs/user-guide/img/d*.webp`) are made by
+`python3 tools/manual/shoot.py [d03 d47 ...]`: it runs the Desk in its PC
+test mode with example data only (stub `ip`, `systemctl`, `lsblk`, … so
+nothing of the build PC appears) and drives a headless `chromium` over the
+DevTools protocol. Re-run it after visible Desk changes, then `make manual`.
+The first-setup and installer screenshots (`d00`, `i*`) are made by hand.
+
 ## 5. Layout
 
 | Path | Content |
