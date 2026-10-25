@@ -536,6 +536,7 @@
 "Neuinstallation ohne Löschen: alte Einstellungen, Benutzer und Freigaben übernehmen.": "Reinstall without erasing: take over the old settings, users and shares.",
 "Neustart": "Restart",
 "Neustart läuft – die NAS startet jetzt das installierte System.": "Restarting – the NAS now starts the installed system.",
+"Nicht erkennbar, welcher Systemslot läuft; nichts geschrieben.": "Cannot tell which system slot is running; nothing written.",
 "Nicht gefunden: %s": "Not found: %s",
 "Noch kein Gerät hat den Medienserver abgefragt.": "No device has queried the media server yet.",
 "Noch kein Konto verbunden.": "No account connected yet.",

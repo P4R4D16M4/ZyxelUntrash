@@ -536,6 +536,7 @@
 "Neuinstallation ohne Löschen: alte Einstellungen, Benutzer und Freigaben übernehmen.": "Réinstallation sans effacement : reprendre les anciens réglages, utilisateurs et partages.",
 "Neustart": "Redémarrage",
 "Neustart läuft – die NAS startet jetzt das installierte System.": "Redémarrage – le NAS lance maintenant le système installé.",
+"Nicht erkennbar, welcher Systemslot läuft; nichts geschrieben.": "Impossible de savoir quel emplacement système est actif ; rien n'a été écrit.",
 "Nicht gefunden: %s": "Introuvable : %s",
 "Noch kein Gerät hat den Medienserver abgefragt.": "Aucun appareil n'a encore interrogé le serveur multimédia.",
 "Noch kein Konto verbunden.": "Aucun compte connecté pour l'instant.",

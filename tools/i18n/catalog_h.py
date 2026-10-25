@@ -173,4 +173,7 @@ T = {
         ("PFE firmware stored in the system state", "Firmware PFE déposé dans l'état du système"),
     "Zustand %s ist kein ext4: PFE-Firmware nicht hinterlegt":
         ("State %s is not ext4: PFE firmware not stored", "L'état %s n'est pas en ext4 : firmware PFE non déposé"),
+    # update install (1.0.4): the running slot is not known -> nothing written
+    "Nicht erkennbar, welcher Systemslot läuft; nichts geschrieben.":
+        ("Cannot tell which system slot is running; nothing written.", "Impossible de savoir quel emplacement système est actif ; rien n'a été écrit."),
 }

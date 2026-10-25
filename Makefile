@@ -77,6 +77,7 @@ test:
 	python3 os/image/tests/test_exec_bits.py
 	python3 os/image/tests/test_live_host.py
 	python3 os/image/tests/test_bootstate.py
+	python3 os/image/tests/test_running_slot.py
 	python3 os/image/tests/test_export_host.py
 	python3 os/image/tests/test_tv_host.py
 	python3 os/image/tests/test_wdt_host.py
