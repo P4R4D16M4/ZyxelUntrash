@@ -181,11 +181,34 @@ def build(w, tdh, port):
     return r, env
 
 
+DEMO_PROCS = [  # pid, name, ppid, uid, cpu ticks per tick, rss pages, command
+    (1, "systemd", 0, 0, 0, 2900, "/sbin/init"), (2, "kthreadd", 0, 0, 0, 0, ""), (41, "kworker/0:1", 2, 0, 0, 0, ""),
+    (512, "systemd-journal", 1, 0, 0, 3100, "/usr/lib/systemd/systemd-journald"),
+    (780, "untrash-desk", 1, 0, 3, 9800, "/usr/bin/python3 /usr/lib/untrash/untrash-desk"),
+    (812, "smbd", 1, 0, 1, 5200, "/usr/sbin/smbd --foreground --no-process-group"),
+    (901, "minidlnad", 1, 104, 9, 4100, "/usr/sbin/minidlnad -S -f /etc/minidlna.conf"),
+    (955, "dnsmasq", 1, 105, 0, 900, "/usr/sbin/dnsmasq -k --conf-file=/etc/untrash/adblock/dnsmasq.conf"),
+    (1203, "sshd", 1, 0, 0, 1700, "sshd: /usr/sbin/sshd -D [listener]"),
+    (1502, "rclone", 1, 0, 6, 7400, "rclone sync /i-data/aaaa0001/Photos dropbox:Photos"),
+    (1610, "ffmpeg", 780, 0, 14, 12800, "ffmpeg -re -f concat -i /run/untrash/tv/holiday.txt -c:v libx264 -f hls index.m3u8"),
+]
+
+
 def live_ticker(r, stop):
     """/proc/stat and /proc/net/dev that move, so Status shows load and traffic."""
     t = 0
+    for pid, name, ppid, uid, _c, _rss, cmd in DEMO_PROCS:
+        os.makedirs(r + "/proc/%d" % pid, exist_ok=True)
+        open(r + "/proc/%d/status" % pid, "w").write("Name:\t%s\nUid:\t%d\t%d\t%d\t%d\n" % (name, uid, uid, uid, uid))
+        open(r + "/proc/%d/cmdline" % pid, "w").write(cmd.replace(" ", "\0"))
+    with open(r + "/etc/passwd", "a") as f:
+        f.write("root:x:0:0:root:/root:/bin/sh\nminidlna:x:104:110::/var/lib/minidlna:/usr/sbin/nologin\n"
+                "dnsmasq:x:105:65534::/var/lib/misc:/usr/sbin/nologin\n")
     while not stop.is_set():
         t += 1
+        for pid, name, ppid, uid, c, rss, cmd in DEMO_PROCS:
+            open(r + "/proc/%d/stat" % pid, "w").write("%d (%s) S %d %d %d 0 -1 0 0 0 0 0 %d %d 0 0 20 0 1 0 %d 0 %d\n"
+                                                    % (pid, name, ppid, pid, pid, c * t, 0, 1000 + pid, rss))
         cpu = lambda u, i: "%d 0 %d %d 0 0 0 0 0 0" % (u * t, u * t // 4, i * t)  # noqa: E731
         open(r + "/proc/stat.tmp", "w").write("cpu  %s\ncpu0 %s\ncpu1 %s\n" % (cpu(46, 154), cpu(23, 77), cpu(22, 78)))
         os.replace(r + "/proc/stat.tmp", r + "/proc/stat")
@@ -278,7 +301,7 @@ SCENARIOS = {
     "d14-users-new": sc("closeAll(); " + OPEN % "users" + " render('users', '_nu'); " + SETTLE % 400 +
                         " document.querySelector('#un').value = 'clara'; document.querySelector('#ud').value = 'Clara (guest room PC)';"
                         " document.querySelector('#up1').value = 'example-pw'; document.querySelector('#up2').value = 'example-pw';"),
-    "d16-status": sc("closeAll(); " + OPEN % "status", wait=2500),
+    "d16-status": sc("closeAll(); " + OPEN % "status" + " maximize('status');", wait=4500),
     "d20-network": sc("closeAll(); " + OPEN % "network" + " maximize('network');"),
     "d22-settings-services": sc("closeAll(); " + OPEN % "settings" + " maximize('settings'); render('settings', 'services');"),
     "d24-settings-power": sc("closeAll(); " + OPEN % "settings" + " maximize('settings'); render('settings', 'power');"),

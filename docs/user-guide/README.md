@@ -743,6 +743,11 @@ itself. Your settings and data are not part of the slot and stay as they are.
 | Disks | Temperature of each disk. Sleeping disks are shown as asleep and are not woken up. |
 | Network | Current traffic per port. |
 | Bottom line | Load, fan level, uptime, swap in use. |
+| Processes | Every running program with its user, CPU share, memory and command line. Click a column header to sort, the filter field searches name, user and command; **Kernel threads** also shows the kernel's own threads. |
+
+**End** asks a program to stop (it can still save and clean up); **Kill** stops it at once, without
+saving anything. Both ask first. Services of the system are usually started again automatically.
+PID 1, kernel threads and the Desk itself cannot be ended here.
 
 **Logs** shows the system log or the log of a single service: System, SMB, Volumes, Takeover (the
 first start after way B), SSH, FTP, Media server, Desk.

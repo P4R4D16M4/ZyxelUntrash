@@ -1759,8 +1759,15 @@ itself. Your settings and data are not part of the slot and stay as they are.</p
 <td>Bottom line</td>
 <td>Load, fan level, uptime, swap in use.</td>
 </tr>
+<tr>
+<td>Processes</td>
+<td>Every running program with its user, CPU share, memory and command line. Click a column header to sort, the filter field searches name, user and command; <strong>Kernel threads</strong> also shows the kernel's own threads.</td>
+</tr>
 </tbody>
 </table>
+<p><strong>End</strong> asks a program to stop (it can still save and clean up); <strong>Kill</strong> stops it at once, without
+saving anything. Both ask first. Services of the system are usually started again automatically.
+PID 1, kernel threads and the Desk itself cannot be ended here.</p>
 <p><strong>Logs</strong> shows the system log or the log of a single service: System, SMB, Volumes, Takeover (the
 first start after way B), SSH, FTP, Media server, Desk.</p>
 <p><img alt="Logs" src="img/d46-logs.webp" /></p>
