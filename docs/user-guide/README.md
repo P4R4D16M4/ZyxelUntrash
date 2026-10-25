@@ -799,7 +799,8 @@ UntrashOS asks the router itself when UPnP is on.
 under **Storage** and in the **UntrashMesh** window. Under **Shares** you can make shares on them for
 your own users, like on any volume. The member decides what you may do (read only or read/write);
 partner volumes are reachable only over UntrashMesh, and they are unavailable while the member is
-offline.
+offline. Administrators also find them in **Files** under **Partner volumes** and can work on them there
+directly.
 
 **Off-site mirror.** A member can keep a complete copy of a data volume of this NAS (RAID 1 over
 UntrashMesh), so the data survives a fire or a theft at one place. In the **UntrashMesh** window
