@@ -43,6 +43,10 @@ fi
 
 mkdir -p "$O"
 cp "$ROOT/kernel/config/$KIND.config" "$O/.config"
+# fragments kernel/config/$KIND.d/*.config, merged in name order
+FRAGS=("$ROOT/kernel/config/$KIND.d/"*.config)
+[[ -e ${FRAGS[0]} ]] || FRAGS=()
+((${#FRAGS[@]})) && "$SRC/scripts/kconfig/merge_config.sh" -m -O "$O" "$O/.config" "${FRAGS[@]}" >/dev/null
 DTB=$O/arch/arm/boot/dts/mindspeed/zyxel-nas542.dtb
 if [[ $KIND == loader ]]; then
 	# pass 1 builds the modules the initramfs carries; pass 2 embeds it
@@ -50,6 +54,12 @@ if [[ $KIND == loader ]]; then
 fi
 "${MK[@]}" olddefconfig >/dev/null
 grep -q '^CONFIG_AUTO_ZRELADDR=y' "$O/.config" && { echo "CONFIG_AUTO_ZRELADDR must stay off" >&2; exit 1; }
+# olddefconfig drops a fragment value silently when a dependency is missing
+for f in "${FRAGS[@]}"; do
+	while read -r l; do
+		grep -qxF -- "$l" "$O/.config" || { echo "${f##*/}: $l lost in olddefconfig" >&2; exit 1; }
+	done < <(grep -E '^CONFIG_[A-Z0-9_]+=' "$f")
+done
 "${MK[@]}" zImage modules dtbs >/dev/null </dev/null
 
 if [[ $KIND == system ]]; then
