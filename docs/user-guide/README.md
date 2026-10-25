@@ -230,7 +230,7 @@ column headers sort by name, size or date.
 | **New folder** | Creates a folder in the current folder. |
 | **Upload** / **Upload a folder** | Uploads files, or a whole folder with its subfolders, into the current folder. You can also drag files and folders from your computer onto the list (or onto a folder in it). The progress shows below the list. |
 | **Download** | One file as it is; a folder or several items as one ZIP file. |
-| **Cut**, **Copy**, **Paste** | Copies or moves the selection, also into another share: open the target folder and choose **Paste**. When names already exist you choose: keep both (the new ones get a number, "name (2)"), replace, or skip. Large copies run on the NAS in the background; the progress shows below the list and can be cancelled. |
+| **Cut**, **Copy**, **Paste** | Copies or moves the selection, also into another share: open the target folder and choose **Paste**. When names already exist you choose: keep both (the new ones get a number, "name (2)"), replace, or skip. Large copies run on the NAS in the background; the progress shows below the list and in the **Transfers** window (see below). |
 | **Rename** | Renames the selected item. |
 | **Delete** | Deletes the selection after a confirmation. On a share with a recycle bin the items go to its folder `recycle` (as for deletions over the network); inside `recycle`, or without a recycle bin, they are deleted permanently. |
 | **Filter** field | Filters the current folder while you type; **Enter** searches the subfolders too. A click on a hit opens its folder. |
@@ -242,6 +242,15 @@ download link, see below), **Export…** (copy or convert, see below), **As shar
 only: a share of its own, [section 5](#5-shares)) and **Properties** (with the size of a folder).
 Drag items onto a folder (or onto a part of the path above the list) to move them there; hold **Ctrl**
 to copy instead.
+
+**Transfers.** The **Transfers** window (in the dock; for administrators under **Data**) lists every
+copy, move, upload and download of the Desk with its progress, speed and the time left. While
+something runs, the top bar shows how many transfers are running; a click opens the window. **Pause**
+holds a copy or a move where it is and **Resume** continues it; **Cancel** ends a transfer and removes
+the partly written file. Finished transfers stay in the list for an hour; **✕** or **Finished ones
+from the list** remove them earlier. Users see their own transfers, administrators those of all users
+and also the jobs of the download service. Copies run as a process of their own, so the Desk stays
+responsive while a large copy runs, also onto a partner volume.
 
 | Key | Action |
 |---|---|
