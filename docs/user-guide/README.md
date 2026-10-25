@@ -824,7 +824,8 @@ Under **Settings → Office** an admin enters the address of the office server a
 which that server reaches this NAS (for example `http://untrash.local`, or `http://<name>.mesh`
 over UntrashMesh). **Save and check** lists the document types the office server supports. Files
 then shows **Open in Office** for them; the document opens in a new tab and is saved back to the
-NAS. Everyone keeps the rights of the share: with read-only access the document opens read-only.
+NAS. In the editor, **Save As** and **Export As** (for example as PDF) ask for a name and put the
+copy in the same folder on the NAS. Everyone keeps the rights of the share: with read-only access the document opens read-only.
 The office server must allow this NAS as storage; see its documentation. Without this setting, a
 Nextcloud can also mount the shares as External storage (WebDAV, see Services, or SMB).
 
