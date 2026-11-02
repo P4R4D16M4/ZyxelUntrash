@@ -1235,6 +1235,90 @@ forwards. <strong>Forwarded services are reachable from the internet.</strong> U
 </tr>
 </tbody>
 </table>
+<h3 id="smart-home">Smart home</h3>
+<p><img alt="Settings: smart home" src="img/d26-settings-smarthome.webp" /></p>
+<p>The NAS can show up as a device in a smart home that speaks MQTT, for example Home Assistant.
+Home Assistant itself does not run on the NAS (it no longer supports 32-bit ARM); it runs on its
+own device, and the NAS reports to it.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Choices</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Connect to the MQTT broker</td>
+<td><strong>off</strong>, on</td>
+<td>The NAS sends its state to the broker.</td>
+</tr>
+<tr>
+<td>Broker, Port</td>
+<td>address; <strong>1883</strong> (8883 with TLS)</td>
+<td>The MQTT broker, for example the Mosquitto add-on of Home Assistant.</td>
+</tr>
+<tr>
+<td>TLS (encrypted, usually port 8883)</td>
+<td><strong>off</strong>, on</td>
+<td>Encrypted connection; the broker needs a certificate that the NAS trusts.</td>
+</tr>
+<tr>
+<td>User name, Password</td>
+<td>text</td>
+<td>The broker account. An empty password field keeps the saved password.</td>
+</tr>
+<tr>
+<td>Discovery prefix</td>
+<td><strong>homeassistant</strong></td>
+<td>Where the device description goes. Change it only if your Home Assistant uses another prefix.</td>
+</tr>
+<tr>
+<td>Send every (seconds)</td>
+<td><strong>60</strong> (10–3600)</td>
+<td>How often the values are sent.</td>
+</tr>
+<tr>
+<td>Allow restart and shut down from the smart home</td>
+<td><strong>off</strong>, on</td>
+<td>Adds the buttons <em>Restart</em> and <em>Shut down</em>. Everyone who may publish on the broker can then use them, so secure the broker with a password.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What Home Assistant shows.</strong> Home Assistant finds the NAS by itself (MQTT discovery) as a device
+named after the NAS. It shows:</p>
+<ul>
+<li>CPU, memory, swap and load</li>
+<li>board temperature and fan level</li>
+<li>per bay, the disk temperature and whether the disk sleeps; a sleeping disk is never woken for this</li>
+<li>per volume, the space used and free</li>
+<li>per disk group, a problem flag when it is degraded, and the progress of a rebuild or check</li>
+<li>what the NAS is doing (streams, devices on the shares, backup, …)</li>
+<li>the last start, and an update entry with the installed and the newest version</li>
+</ul>
+<p>Values of a disk or volume that is removed disappear from Home Assistant as well.</p>
+<p><strong>Home Assistant from anywhere.</strong> With UntrashMesh, the NAS can pass Home Assistant on to the
+devices of your mesh. Switch on <strong>Reach Home Assistant through UntrashMesh</strong> and enter the address of
+Home Assistant in your home network as <code>&lt;IP address&gt;:8123</code> (a host name works too, but an IP address
+is safer). On a phone with the UntrashApp connected, enter the address that the page shows,
+<code>http://[&lt;mesh address of the NAS&gt;]:8123</code>, in the Home Assistant app (for example as its external
+address). The port is open only inside the mesh, not in your home network or on the internet.
+From outside your home the phone must reach the NAS: see UntrashMesh in
+<a href="#16-status-logs-and-system-tools">Status, logs and system tools</a> (UPnP or UDP port 51820).</p>
+<p>Notes for Home Assistant:</p>
+<ul>
+<li>Home Assistant sees these connections as coming from the NAS. Do not add the NAS to
+  <code>trusted_networks</code>; otherwise anyone in the mesh is signed in without a password.</li>
+<li>If Home Assistant bans addresses after wrong logins (<code>ip_ban</code>), a ban of the NAS address blocks
+  every phone that comes in through the mesh. Remove the NAS from <code>ip_bans.yaml</code> to lift it.</li>
+<li>All members of the mesh reach the port, partner NAS too; Home Assistant still asks for its own login.</li>
+</ul>
+<p><strong>Media in Home Assistant.</strong> Switch on the <a href="#media-server">media server</a>. Home Assistant offers it
+through its <em>DLNA Digital Media Server</em> integration. The music, videos and photos of the published
+shares can then be picked in the media browser of Home Assistant and in scenes and automations
+(for example with the action <em>Media player: Play media</em>). The player plays the files as they are,
+so it must support their format.</p>
 <h3 id="dyndns">DynDNS</h3>
 <table>
 <thead>

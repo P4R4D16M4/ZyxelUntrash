@@ -235,6 +235,9 @@ def populate(r, base, op, pw):
     api(base, op, "/api/login", {"user": "admin", "password": pw})
     api(base, op, "/api/settings", {"hostname": "familynas", "netbios": {"name": "FAMILYNAS", "workgroup": "WORKGROUP",
                                                                         "description": "Family NAS in the hallway"}})
+    api(base, op, "/api/settings", {"smarthome": {"mqtt": {"active": True, "server": "homeassistant.local", "port": 1883,
+                                                           "username": "familynas", "password": "example-pw"},
+                                                  "ha_proxy": {"active": True, "target": "192.0.2.20:8123"}}})
     for name in ("alice", "bob"):
         api(base, op, "/api/users/delete", {"name": name})
     for name, desc in (("anna", ""), ("ben", "")):
@@ -306,6 +309,7 @@ SCENARIOS = {
     "d22-settings-services": sc("closeAll(); " + OPEN % "settings" + " maximize('settings'); render('settings', 'services');"),
     "d24-settings-power": sc("closeAll(); " + OPEN % "settings" + " maximize('settings'); render('settings', 'power');"),
     "d25-settings-notify": sc("closeAll(); " + OPEN % "settings" + " maximize('settings'); render('settings', 'notify');"),
+    "d26-settings-smarthome": sc("closeAll(); " + OPEN % "settings" + " maximize('settings'); render('settings', 'smarthome');", height=1120),
     "d30-adblock-overview": sc("closeAll(); " + OPEN % "adblock"),
     "d32-adblock-rules": sc("closeAll(); " + OPEN % "adblock" + " render('adblock', 'rules');"),
     "d38-media-new-channel": sc("closeAll(); " + OPEN % "media" + " render('media', 'tv'); " + SETTLE % 800 +
