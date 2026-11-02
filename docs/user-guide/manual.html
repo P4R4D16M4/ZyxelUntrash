@@ -422,7 +422,7 @@ column headers sort by name, size or date.</p>
 </tr>
 <tr>
 <td><strong>Cut</strong>, <strong>Copy</strong>, <strong>Paste</strong></td>
-<td>Copies or moves the selection, also into another share: open the target folder and choose <strong>Paste</strong>. When names already exist you choose: keep both (the new ones get a number, "name (2)"), replace, or skip. Large copies run on the NAS in the background; the progress shows below the list and can be cancelled.</td>
+<td>Copies or moves the selection, also into another share: open the target folder and choose <strong>Paste</strong>. When names already exist you choose: keep both (the new ones get a number, "name (2)"), replace, or skip. Large copies run on the NAS in the background; the progress shows below the list and in the <strong>Transfers</strong> window (see below).</td>
 </tr>
 <tr>
 <td><strong>Rename</strong></td>
@@ -451,6 +451,14 @@ download link, see below), <strong>Export…</strong> (copy or convert, see belo
 only: a share of its own, <a href="#5-shares">section 5</a>) and <strong>Properties</strong> (with the size of a folder).
 Drag items onto a folder (or onto a part of the path above the list) to move them there; hold <strong>Ctrl</strong>
 to copy instead.</p>
+<p><strong>Transfers.</strong> The <strong>Transfers</strong> window (in the dock; for administrators under <strong>Data</strong>) lists every
+copy, move, upload and download of the Desk with its progress, speed and the time left. While
+something runs, the top bar shows how many transfers are running; a click opens the window. <strong>Pause</strong>
+holds a copy or a move where it is and <strong>Resume</strong> continues it; <strong>Cancel</strong> ends a transfer and removes
+the partly written file. Finished transfers stay in the list for an hour; <strong>✕</strong> or <strong>Finished ones
+from the list</strong> remove them earlier. Users see their own transfers, administrators those of all users
+and also the jobs of the download service. Copies run as a process of their own, so the Desk stays
+responsive while a large copy runs, also onto a partner volume.</p>
 <table>
 <thead>
 <tr>
@@ -789,6 +797,26 @@ volume, is lost. A running job is shown with its progress and log.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="ram-boost">RAM boost</h3>
+<p>The NAS has 1 GB of RAM. With the RAM boost, an SSD in any bay becomes a
+memory extension: the NAS moves memory that is not in use right now (idle
+services, background jobs) to the SSD and keeps the RAM free for what runs.
+<strong>Set up</strong> in the <em>RAM boost</em> section offers every free SSD.</p>
+<ul>
+<li><strong>Needs an SSD.</strong> Hard disks are not offered. The SSD is erased (type
+  <strong>FORMAT</strong> to confirm).</li>
+<li><strong>8 GB</strong> of the SSD are used; the rest stays free and spares the SSD.</li>
+<li><strong>One bay less for RAID:</strong> that bay no longer counts for volumes, so at
+  most 3 data disks remain.</li>
+<li>It helps when many apps and jobs run at once. When the RAM is enough,
+  nothing gets faster.</li>
+<li><strong>Do not pull the SSD while the boost is on.</strong> <em>Switch off</em> moves the
+  offloaded memory back into RAM first, then erases the SSD and frees the
+  bay. If more is offloaded than fits back, it refuses: stop apps or restart
+  the NAS, then switch off.</li>
+</ul>
+<p>Need more storage space instead? With UntrashMesh a second NAS shares its
+volumes with this one as partner volumes, with up to 4 more disks.</p>
 <h3 id="iscsi">iSCSI</h3>
 <p>Volumes can be offered to other computers as iSCSI disks.</p>
 <table>
