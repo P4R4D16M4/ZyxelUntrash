@@ -1909,6 +1909,23 @@ NAS. In the editor, <strong>Save As</strong> and <strong>Export As</strong> (for
 copy in the same folder on the NAS. Everyone keeps the rights of the share: with read-only access the document opens read-only.
 The office server must allow this NAS as storage; see its documentation. Without this setting, a
 Nextcloud can also mount the shares as External storage (WebDAV, see Services, or SMB).</p>
+<p><strong>Nextcloud.</strong> A Nextcloud with the UntrashOS app (in development, not released yet) can join
+UntrashMesh as a member. An admin chooses <strong>UntrashMesh → Connect a Nextcloud</strong>, picks the shares
+the Nextcloud may follow and gives the invitation (valid once, 24 hours) to the Nextcloud admin,
+who pastes it under <strong>Administration settings → UntrashOS</strong>. While it joins, the Nextcloud must
+reach this NAS (same network, or over the internet with UPnP on the router).</p>
+<ul>
+<li>The Nextcloud keeps the mesh's address book at its internet address. When members lose each
+  other, for example because the internet address at home changed, they find each other again
+  through it. It only stores what the members signed, so it cannot redirect anyone; it does see
+  their addresses, so connect a Nextcloud you trust.</li>
+<li>This NAS tells the Nextcloud which files changed in the shares it follows. The Nextcloud then
+  does not have to scan the shares, and the disks can sleep.</li>
+<li>The Nextcloud reads the files over WebDAV (switch it on under <strong>Settings → Services</strong>), with the
+  rights of each user.</li>
+<li><strong>Shares…</strong> (per Nextcloud) changes the shares it follows on this NAS. On other NAS of the mesh
+  an admin chooses them there.</li>
+</ul>
 <p><strong>UntrashApp.</strong> The UntrashApp for phones (in development, not released yet) joins UntrashMesh
 and signs in on the NAS as one Desk user. An admin pairs it under <strong>UntrashMesh → Pair the
 UntrashApp</strong>: choose the user, then scan the QR code with the app (valid once, for one hour). On

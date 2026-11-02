@@ -839,6 +839,23 @@ copy in the same folder on the NAS. Everyone keeps the rights of the share: with
 The office server must allow this NAS as storage; see its documentation. Without this setting, a
 Nextcloud can also mount the shares as External storage (WebDAV, see Services, or SMB).
 
+**Nextcloud.** A Nextcloud with the UntrashOS app (in development, not released yet) can join
+UntrashMesh as a member. An admin chooses **UntrashMesh → Connect a Nextcloud**, picks the shares
+the Nextcloud may follow and gives the invitation (valid once, 24 hours) to the Nextcloud admin,
+who pastes it under **Administration settings → UntrashOS**. While it joins, the Nextcloud must
+reach this NAS (same network, or over the internet with UPnP on the router).
+
+- The Nextcloud keeps the mesh's address book at its internet address. When members lose each
+  other, for example because the internet address at home changed, they find each other again
+  through it. It only stores what the members signed, so it cannot redirect anyone; it does see
+  their addresses, so connect a Nextcloud you trust.
+- This NAS tells the Nextcloud which files changed in the shares it follows. The Nextcloud then
+  does not have to scan the shares, and the disks can sleep.
+- The Nextcloud reads the files over WebDAV (switch it on under **Settings → Services**), with the
+  rights of each user.
+- **Shares…** (per Nextcloud) changes the shares it follows on this NAS. On other NAS of the mesh
+  an admin chooses them there.
+
 **UntrashApp.** The UntrashApp for phones (in development, not released yet) joins UntrashMesh
 and signs in on the NAS as one Desk user. An admin pairs it under **UntrashMesh → Pair the
 UntrashApp**: choose the user, then scan the QR code with the app (valid once, for one hour). On
