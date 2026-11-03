@@ -931,6 +931,11 @@ reach this NAS (same network, or over the internet with UPnP on the router).
   rights of each user.
 - **Shares…** (per Nextcloud) changes the shares it follows on this NAS. On other NAS of the mesh
   an admin chooses them there.
+- A Nextcloud on a rented server cannot reach this NAS at home by its home network address. Do
+  not forward the WebDAV ports on the router: that would put the users' passwords on the
+  internet. Instead, the Nextcloud server admin sets up the app's tunnel helper (see the app's
+  README). The NAS then connects to the server through UntrashMesh, and the Nextcloud reaches the
+  shares inside that encrypted link. Nothing is forwarded at home.
 
 **UntrashApp.** The UntrashApp for phones (in development, not released yet) joins UntrashMesh
 and signs in on the NAS as one Desk user. An admin pairs it under **UntrashMesh → Pair the
