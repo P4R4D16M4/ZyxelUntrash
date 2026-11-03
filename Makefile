@@ -101,3 +101,4 @@ test-root:
 	sudo $(BOARD)/tests/test-installer-keep-host.sh $(TOOLROOT)
 	sudo ZT_BOARD_ROOTFS=$(CURDIR)/$(BOARD)/rootfs $(OS)/image/tests/test-storage-host.sh $(TOOLROOT)
 	sudo python3 $(OS)/image/tests/test-iscsi-host.py
+	python3 $(OS)/image/tests/test_mesh_firewall_root.py

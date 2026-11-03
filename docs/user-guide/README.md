@@ -276,7 +276,7 @@ Clicking a file opens it:
 | Option | Choices | Meaning |
 |---|---|---|
 | Valid | 1 day, **7 days**, 30 days, 90 days | When the link stops working. |
-| Password | optional, at least 4 characters | Asked before the download. |
+| Password | optional, at least 4 characters | Asked before the download. After 5 wrong passwords the link waits, longer with every further try (at most 5 minutes). |
 
 Anyone with the link can download the file, or a folder as ZIP, without signing in. Links work in
 the home network at once. From outside they need a port forwarding ([section 8](#8-network)).
@@ -453,9 +453,16 @@ way back: connect the NAS directly to a PC with a network cable. It is then reac
 automatic address as `<host name>.local`.
 
 **Router (UPnP port forwarding)** opens ports on the router for access from the internet. For each
-service enter a WAN port (empty = off): Untrash Desk (HTTP), Untrash Desk (HTTPS), FTP, SSH,
-WebDAV, WebDAV (HTTPS), Web Publishing, media server. The table shows what the router currently
-forwards. **Forwarded services are reachable from the internet.** Use HTTPS and strong passwords.
+service enter a WAN port (empty = off): Untrash Desk (HTTPS), FTP, SSH, WebDAV, WebDAV (HTTPS),
+Web Publishing, media server. The table shows what the router currently forwards. **Forwarded
+services are reachable from the internet.** Use HTTPS and strong passwords: over FTP, WebDAV and
+Web Publishing without HTTPS, passwords cross the internet unencrypted.
+
+- The Desk over plain HTTP is **never** forwarded, even if the old Zyxel firmware did. Its sign-in
+  would cross the internet unencrypted.
+- The Desk accepts a sign-in over plain HTTP only from the home network and from UntrashMesh. From
+  the internet it needs HTTPS ([Certificate / HTTPS](#certificate--https)), even when a forwarding
+  was set up on the router by hand.
 
 ## 9. Settings
 

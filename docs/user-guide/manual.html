@@ -528,7 +528,7 @@ responsive while a large copy runs, also onto a partner volume.</p>
 <tr>
 <td>Password</td>
 <td>optional, at least 4 characters</td>
-<td>Asked before the download.</td>
+<td>Asked before the download. After 5 wrong passwords the link waits, longer with every further try (at most 5 minutes).</td>
 </tr>
 </tbody>
 </table>
@@ -972,9 +972,17 @@ asks for a name and a description. Groups are used for share rights.</p>
 way back: connect the NAS directly to a PC with a network cable. It is then reachable by its
 automatic address as <code>&lt;host name&gt;.local</code>.</p>
 <p><strong>Router (UPnP port forwarding)</strong> opens ports on the router for access from the internet. For each
-service enter a WAN port (empty = off): Untrash Desk (HTTP), Untrash Desk (HTTPS), FTP, SSH,
-WebDAV, WebDAV (HTTPS), Web Publishing, media server. The table shows what the router currently
-forwards. <strong>Forwarded services are reachable from the internet.</strong> Use HTTPS and strong passwords.</p>
+service enter a WAN port (empty = off): Untrash Desk (HTTPS), FTP, SSH, WebDAV, WebDAV (HTTPS),
+Web Publishing, media server. The table shows what the router currently forwards. <strong>Forwarded
+services are reachable from the internet.</strong> Use HTTPS and strong passwords: over FTP, WebDAV and
+Web Publishing without HTTPS, passwords cross the internet unencrypted.</p>
+<ul>
+<li>The Desk over plain HTTP is <strong>never</strong> forwarded, even if the old Zyxel firmware did. Its sign-in
+  would cross the internet unencrypted.</li>
+<li>The Desk accepts a sign-in over plain HTTP only from the home network and from UntrashMesh. From
+  the internet it needs HTTPS (<a href="#certificate--https">Certificate / HTTPS</a>), even when a forwarding
+  was set up on the router by hand.</li>
+</ul>
 <h2 id="9-settings">9. Settings</h2>
 <p><img alt="Settings: services" src="img/d22-settings-services.webp" /></p>
 <h3 id="language">Language</h3>
