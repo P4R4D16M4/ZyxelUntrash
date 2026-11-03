@@ -372,6 +372,28 @@ volume, is lost. A running job is shown with its progress and log.
 | Disks | the free disks | Which disks to use. |
 | First volume: name, Size in GB | only for *Disk group*; empty size = everything | The first volume in the disk group. |
 
+### RAM boost
+
+The NAS has 1 GB of RAM. With the RAM boost, an SSD in any bay becomes a
+memory extension: the NAS moves memory that is not in use right now (idle
+services, background jobs) to the SSD and keeps the RAM free for what runs.
+**Set up** in the *RAM boost* section offers every free SSD.
+
+- **Needs an SSD.** Hard disks are not offered. The SSD is erased (type
+  **FORMAT** to confirm).
+- **8 GB** of the SSD are used; the rest stays free and spares the SSD.
+- **One bay less for RAID:** that bay no longer counts for volumes, so at
+  most 3 data disks remain.
+- It helps when many apps and jobs run at once. When the RAM is enough,
+  nothing gets faster.
+- **Do not pull the SSD while the boost is on.** *Switch off* moves the
+  offloaded memory back into RAM first, then erases the SSD and frees the
+  bay. If more is offloaded than fits back, it refuses: stop apps or restart
+  the NAS, then switch off.
+
+Need more storage space instead? With UntrashMesh a second NAS shares its
+volumes with this one as partner volumes, with up to 4 more disks.
+
 ### iSCSI
 
 Volumes can be offered to other computers as iSCSI disks.
