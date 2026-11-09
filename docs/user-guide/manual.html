@@ -2021,8 +2021,17 @@ NAS. In the editor, <strong>Save As</strong> and <strong>Export As</strong> (for
 copy in the same folder on the NAS. Everyone keeps the rights of the share: with read-only access the document opens read-only.
 The office server must allow this NAS as storage; see its documentation. Without this setting, a
 Nextcloud can also mount the shares as External storage (WebDAV, see Services, or SMB).</p>
-<p><strong>Nextcloud.</strong> A Nextcloud with the UntrashOS app (in development, not released yet) can join
-UntrashMesh as a member. An admin chooses <strong>UntrashMesh → Connect a Nextcloud</strong>, picks the shares
+<p><strong>Nextcloud.</strong> A Nextcloud with the UntrashOS app can join UntrashMesh as a member. The app
+needs Nextcloud 25 to 35, PHP with sodium and, for the shares, the app <em>External storage support</em>.
+The Nextcloud server admin installs it once:</p>
+<ol>
+<li>Download <code>untrash-&lt;version&gt;.tar.gz</code> from the
+   <a href="https://github.com/P4R4D16M4/ZyxelUntrash/releases/tag/nextcloud-0.5.0">Nextcloud app release</a>.</li>
+<li>Unpack it into the <code>apps</code> or <code>custom_apps</code> folder of the Nextcloud, as the web server user
+   (it creates the folder <code>untrash</code>).</li>
+<li>Enable it under <strong>Apps → Your apps</strong>, or with <code>occ app:enable untrash</code>.</li>
+</ol>
+<p>To link it, an admin of this NAS chooses <strong>UntrashMesh → Connect a Nextcloud</strong>, picks the shares
 the Nextcloud may follow and gives the invitation (valid once, 24 hours) to the Nextcloud admin,
 who pastes it under <strong>Administration settings → UntrashOS</strong>. While it joins, the Nextcloud must
 reach this NAS (same network, or over the internet with UPnP on the router).</p>
@@ -2039,8 +2048,8 @@ reach this NAS (same network, or over the internet with UPnP on the router).</p>
   an admin chooses them there.</li>
 <li>A Nextcloud on a rented server cannot reach this NAS at home by its home network address. Do
   not forward the WebDAV ports on the router: that would put the users' passwords on the
-  internet. Instead, the Nextcloud server admin sets up the app's tunnel helper (see the app's
-  README). The NAS then connects to the server through UntrashMesh, and the Nextcloud reaches the
+  internet. Instead, the Nextcloud server admin sets up the app's tunnel helper
+  (<code>untrash-cloud-wg-&lt;version&gt;.tar.gz</code> in the same release; see the app's README). The NAS then connects to the server through UntrashMesh, and the Nextcloud reaches the
   shares inside that encrypted link. Nothing is forwarded at home.</li>
 </ul>
 <p><strong>UntrashApp.</strong> The UntrashApp for phones (in development, not released yet) joins UntrashMesh
