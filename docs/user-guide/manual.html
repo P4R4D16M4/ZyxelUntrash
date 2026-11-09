@@ -2026,10 +2026,12 @@ needs Nextcloud 25 to 35, PHP with sodium and, for the shares, the app <em>Exter
 The Nextcloud server admin installs it once:</p>
 <ol>
 <li>Download <code>untrash-&lt;version&gt;.tar.gz</code> from the
-   <a href="https://github.com/P4R4D16M4/ZyxelUntrash/releases/tag/nextcloud-0.5.0">Nextcloud app release</a>.</li>
+   <a href="https://github.com/P4R4D16M4/UntrashNC/releases/latest">UntrashNC releases</a>.</li>
 <li>Unpack it into the <code>apps</code> or <code>custom_apps</code> folder of the Nextcloud, as the web server user
    (it creates the folder <code>untrash</code>).</li>
 <li>Enable it under <strong>Apps → Your apps</strong>, or with <code>occ app:enable untrash</code>.</li>
+<li>For each share: an external storage (WebDAV) on the NAS, as described in the app's README.
+   Nextcloud shows the share only once that storage exists.</li>
 </ol>
 <p>To link it, an admin of this NAS chooses <strong>UntrashMesh → Connect a Nextcloud</strong>, picks the shares
 the Nextcloud may follow and gives the invitation (valid once, 24 hours) to the Nextcloud admin,

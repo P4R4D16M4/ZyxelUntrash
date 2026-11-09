@@ -927,10 +927,12 @@ needs Nextcloud 25 to 35, PHP with sodium and, for the shares, the app *External
 The Nextcloud server admin installs it once:
 
 1. Download `untrash-<version>.tar.gz` from the
-   [Nextcloud app release](https://github.com/P4R4D16M4/ZyxelUntrash/releases/tag/nextcloud-0.5.0).
+   [UntrashNC releases](https://github.com/P4R4D16M4/UntrashNC/releases/latest).
 2. Unpack it into the `apps` or `custom_apps` folder of the Nextcloud, as the web server user
    (it creates the folder `untrash`).
 3. Enable it under **Apps → Your apps**, or with `occ app:enable untrash`.
+4. For each share: an external storage (WebDAV) on the NAS, as described in the app's README.
+   Nextcloud shows the share only once that storage exists.
 
 To link it, an admin of this NAS chooses **UntrashMesh → Connect a Nextcloud**, picks the shares
 the Nextcloud may follow and gives the invitation (valid once, 24 hours) to the Nextcloud admin,
