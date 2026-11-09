@@ -68,7 +68,7 @@ on the stick is built from this repository.
 You do not need to build anything:
 
 1. Download the stick image
-   [`untrash-stick-1.2-rc4.img.xz`](https://github.com/P4R4D16M4/ZyxelUntrash/releases/download/v1.2-rc4/untrash-stick-1.2-rc4.img.xz)
+   [`untrash-stick-1.2.img.xz`](https://github.com/P4R4D16M4/ZyxelUntrash/releases/download/1.2/untrash-stick-1.2.img.xz)
    (about 270 MB).  All versions and the update files for existing
    installations are on the [Releases](https://github.com/P4R4D16M4/ZyxelUntrash/releases) page.
 2. Write it to a USB stick of at least 4 GB with
