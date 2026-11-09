@@ -931,8 +931,11 @@ The Nextcloud server admin installs it once:
 2. Unpack it into the `apps` or `custom_apps` folder of the Nextcloud, as the web server user
    (it creates the folder `untrash`).
 3. Enable it under **Apps → Your apps**, or with `occ app:enable untrash`.
-4. For each share: an external storage (WebDAV) on the NAS, as described in the app's README.
-   Nextcloud shows the share only once that storage exists.
+
+Each share this NAS offers the Nextcloud then appears there as an external storage by itself (app
+version 0.6.0 or newer, with the Nextcloud app *External storage support*), for the groups the
+Nextcloud admin chose. Each Nextcloud user signs in once with their user name and password on this
+NAS under **Personal settings → External storage** in Nextcloud, and keeps their rights from the NAS.
 
 To link it, an admin of this NAS chooses **UntrashMesh → Connect a Nextcloud**, picks the shares
 the Nextcloud may follow and gives the invitation (valid once, 24 hours) to the Nextcloud admin,
@@ -947,8 +950,9 @@ reach this NAS (same network, or over the internet with UPnP on the router).
   does not have to scan the shares, and the disks can sleep.
 - The Nextcloud reads the files over WebDAV (switch it on under **Settings → Services**), with the
   rights of each user.
-- **Shares…** (per Nextcloud) changes the shares it follows on this NAS. On other NAS of the mesh
-  an admin chooses them there.
+- **Shares…** (per Nextcloud) changes the shares it follows on this NAS. A new share is not added
+  by itself: tick it here, and it appears in the Nextcloud within a few minutes. On other NAS of the
+  mesh an admin chooses them there.
 - A Nextcloud on a rented server cannot reach this NAS at home by its home network address. Do
   not forward the WebDAV ports on the router: that would put the users' passwords on the
   internet. Instead, the Nextcloud server admin sets up the app's tunnel helper
