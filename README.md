@@ -10,13 +10,44 @@ backup the installer made), and it updates itself with signed A/B system images.
 
 - **Untrash Desk**, a web interface in the browser: files, shares, users,
   storage and RAID, network, backups, cloud sync, downloads, media server,
-  broadcast channels, ad filter, terminal, updates, logs; German, English, French
+  broadcast channels, terminal, updates, logs; German, English, French
 - **Everything the Zyxel firmware did**, on current software: SMB, FTP, NFS,
   WebDAV, DLNA media server, Time Machine, iSCSI, USB copy button, power
   schedule, fan control, LEDs and the buzzer
+- **Ad filter** for the whole home network: the NAS answers DNS and blocks
+  ads and trackers for every device that uses it, with block lists
+  (StevenBlack, Hagezi), own allow/block rules, a query log and statistics
 - **All four bays**, including the two behind the ASM1061 PCIe controller 
 - **Safe by construction**: read-only, verified system image (erofs +
   dm-verity), two slots with automatic fallback, hardware watchdog
+
+### New in 1.1
+
+- **UntrashMesh**: several UntrashOS devices form one encrypted network
+  (WireGuard), at home and over the internet, without a cloud provider or a
+  fixed IP address.  Members reach each other by name (`<name>.mesh`), offer
+  each other shares read-only or read/write (*partner volumes*) and can keep
+  an **off-site mirror** of a data volume on another member (DRBD)
+- **UntrashApp** pairing: the phone app joins the mesh and can be a second
+  factor for signing in to the Desk
+- **Office**: documents on the NAS open and save in the browser through an
+  external office server (Collabora Online, Nextcloud Office, ONLYOFFICE; WOPI)
+- **Updates from the release page**: the NAS finds new signed releases on
+  GitHub by itself
+- **Themes**: dark, light, high contrast or automatic, colour-vision palettes,
+  reduced motion; stored per user
+- **Sounds**: a melody editor for the buzzer, with import and export of sound sets
+- **Feedback**: prepares a bug report as a GitHub issue, with optional
+  anonymised system info; nothing is sent automatically
+
+### New in 1.2
+
+- **Smart home**: the NAS appears as a device in Home Assistant or any other
+  MQTT smart home
+- **RAM boost**: an SSD in any bay becomes a memory extension for the 1 GB NAS
+- **Nextcloud** as an UntrashMesh member: it keeps the mesh's address book,
+  follows file changes on the NAS shares and reaches them through an encrypted
+  tunnel, without port forwarding at home
 
 ## Documentation
 
