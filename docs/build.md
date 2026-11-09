@@ -1,5 +1,19 @@
 # Building UntrashOS
 
+> **You only want to install UntrashOS? You do not need to build anything.**
+> Download the ready stick image and write it to a USB stick:
+>
+> 1. Download [`untrash-stick-1.2-rc4.img.xz`](https://github.com/P4R4D16M4/ZyxelUntrash/releases/download/v1.2-rc4/untrash-stick-1.2-rc4.img.xz)
+>    (about 270 MB; all versions are on the [Releases](https://github.com/P4R4D16M4/ZyxelUntrash/releases) page).
+> 2. Install [balenaEtcher](https://etcher.balena.io/) or
+>    [Raspberry Pi Imager](https://www.raspberrypi.com/software/) (Windows, macOS, Linux).
+> 3. Choose the downloaded `.img.xz` (no need to unpack it), choose a USB stick of at least
+>    4 GB and write.  **Everything on the stick is erased.**
+> 4. Continue with the [user guide](user-guide/README.md#13-first-run-under-the-zyxel-firmware):
+>    stick into the NAS, switch it on.
+>
+> The rest of this page is for developers who want to build the image themselves.
+
 UntrashOS is built on a Debian/Ubuntu PC (x86-64) for the NAS542 (ARMv7).
 Everything comes from this repository, the UntrashOS repository (the
 device-independent part, a git submodule in `untrashos/`) and a few external

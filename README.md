@@ -68,12 +68,22 @@ contain no proprietary firmware: the network firmware of the SoC (NXP PFE) is
 extracted on the NAS from the stock kernel already in its flash.  Everything
 on the stick is built from this repository.
 
-**Download:** the installer stick image and the update file for existing
-installations are on the [Releases](https://github.com/P4R4D16M4/ZyxelUntrash/releases)
-page.  Image writers such as balenaEtcher and Raspberry Pi Imager write the
-`.img.xz` directly; otherwise unpack it with `xz -d` first.  Then follow the
-[user guide](docs/user-guide/README.md).  You can also build the image yourself
-([Building](docs/build.md)).
+## Download and install
+
+You do not need to build anything:
+
+1. Download the stick image
+   [`untrash-stick-1.2-rc4.img.xz`](https://github.com/P4R4D16M4/ZyxelUntrash/releases/download/v1.2-rc4/untrash-stick-1.2-rc4.img.xz)
+   (about 270 MB).  All versions and the update files for existing
+   installations are on the [Releases](https://github.com/P4R4D16M4/ZyxelUntrash/releases) page.
+2. Write it to a USB stick of at least 4 GB with
+   [balenaEtcher](https://etcher.balena.io/) or
+   [Raspberry Pi Imager](https://www.raspberrypi.com/software/): choose the
+   `.img.xz` as it is, choose the stick, write.  Everything on the stick is erased.
+3. Plug the stick into the NAS542 (running the Zyxel firmware) and follow the
+   [user guide](docs/user-guide/README.md#1-installation).
+
+To build the image yourself, see [Building](docs/build.md).
 
 ## License
 
