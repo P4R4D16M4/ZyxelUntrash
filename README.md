@@ -39,8 +39,8 @@ backup the installer made), and it updates itself with signed A/B system images.
 - **Sounds**: a melody editor for the buzzer, with import and export of sound sets
 - **Feedback**: prepares a bug report as a GitHub issue, with optional
   anonymised system info; nothing is sent automatically
-
-### New in 1.2
+  
+## New in 1.2
 
 - **Smart home**: the NAS appears as a device in Home Assistant or any other
   MQTT smart home
