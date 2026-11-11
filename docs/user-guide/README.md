@@ -221,6 +221,13 @@ services (SMB, SSH, FTP, NFS, media server, time, disk spin-down, mDNS).
 Administrators see all apps. Normal users see **Files**, **Channels**, **Manual** and **My account**
 ([section 17](#17-working-as-a-normal-user)).
 
+**Phone view.** On a phone (a screen up to 760 pixels wide, or in the UntrashApp) the Desk starts
+in the phone view instead of windows and dock: a home page with a status card and the app groups,
+and one app at a time on the whole screen with **back** in the top bar. The back button of the
+phone works as well. Side lists become a row of buttons at the top, dialogs and menus slide up
+from the bottom. Click your user name and choose **Phone view** or **Desktop view** to switch;
+the choice is kept in this browser.
+
 ## 4. Files
 
 ![Files: a folder in the Photos share](img/d03-files-photos.webp)
@@ -876,6 +883,27 @@ The editor works like a small loop-based music program. The buzzer plays one ton
 
 **Terminal** (administrators only) opens a shell on the NAS in the browser window.
 
+**UntrashKey** (off unless you switch it on) makes your UntrashOS stick a hardware key. The areas
+you choose then work only while the paired stick is plugged into the NAS: someone who has only
+your admin password (stolen, guessed, or a session someone took over) gets no shell and cannot
+change who has access.
+
+| Action | What happens |
+|---|---|
+| Pair a stick | Give the key a name and choose the administrator it belongs to, then pull the UntrashOS stick out of the NAS and plug it in again within two minutes. The stick gets a random key file (`UNTRASH/untrashkey/`); the NAS keeps only its fingerprint. Pairing the same stick again replaces its old key. |
+| Create a key stick | Makes a new stick for another administrator, or a replacement: type **FORMAT**, then plug a USB stick (about 1 GB or more) into the NAS within two minutes. **Everything on it is erased.** The NAS writes a complete UntrashOS stick onto it (current system, the stock backup of this NAS for the way back, its own key). |
+| Stick archive | What new sticks are made from. The installer stores it; on a NAS installed before 1.2, plug in the original UntrashOS stick and choose **Store the plugged stick**. |
+| Protected areas | **SSH** (sshd runs only while the key is in; pulling it ends every SSH session), **Web terminal** (closes when the key is pulled), **Accounts and access** (users, groups, admin rights, other users' passwords and sign-in, UntrashApp and mesh links), **Network exposure** (services and network settings, port forwarding, certificate, iSCSI, smart home), **System** (installing updates and their settings, back to stock, ending processes), **Data and storage** (RAID, shares, backup and cloud jobs, mesh shares and mirrors; off by default). |
+| UntrashKey on, Save | Switching on needs a paired stick plugged in, so you cannot lock yourself out. While it is on, every change here needs the stick too. |
+| SSH keys on the stick | Public SSH keys (one per line) that may log in as `root` while this stick is plugged in. They are stored on the stick, not on the NAS. |
+| Remove | The stick no longer opens anything. The last key can only be removed after switching UntrashKey off. |
+
+A key opens the protected areas only for the administrator it belongs to, and the log names the
+key ID of every action it opens. When a protected action needs the key, the Desk asks you to plug
+it in and carries on by itself as soon as it is in. **Lost the stick?** Sign in as admin, pair a new stick (that needs you at the
+NAS to plug it in), then remove the old key. Keep the stick out of the NAS when you do not need
+it: while it is plugged in, the protected areas are open.
+
 **UntrashMesh** connects several UntrashOS devices to one encrypted network (WireGuard), at home and
 over the internet. No cloud provider and no fixed IP address are needed: every device keeps an
 address book of the others, and a device whose address changes tells all members at once; members
@@ -929,8 +957,22 @@ copy in the same folder on the NAS. Everyone keeps the rights of the share: with
 The office server must allow this NAS as storage; see its documentation. Without this setting, a
 Nextcloud can also mount the shares as External storage (WebDAV, see Services, or SMB).
 
-**Nextcloud.** A Nextcloud with the UntrashOS app (in development, not released yet) can join
-UntrashMesh as a member. An admin chooses **UntrashMesh → Connect a Nextcloud**, picks the shares
+**Nextcloud.** A Nextcloud with the UntrashOS app can join UntrashMesh as a member. The app
+needs Nextcloud 25 to 35, PHP with sodium and, for the shares, the app *External storage support*.
+The Nextcloud server admin installs it once:
+
+1. Download `untrash-<version>.tar.gz` from the
+   [UntrashNC releases](https://github.com/P4R4D16M4/UntrashNC/releases/latest).
+2. Unpack it into the `apps` or `custom_apps` folder of the Nextcloud, as the web server user
+   (it creates the folder `untrash`).
+3. Enable it under **Apps → Your apps**, or with `occ app:enable untrash`.
+
+Each share this NAS offers the Nextcloud then appears there as an external storage by itself (app
+version 0.6.0 or newer, with the Nextcloud app *External storage support*), for the groups the
+Nextcloud admin chose. Each Nextcloud user signs in once with their user name and password on this
+NAS under **Personal settings → External storage** in Nextcloud, and keeps their rights from the NAS.
+
+To link it, an admin of this NAS chooses **UntrashMesh → Connect a Nextcloud**, picks the shares
 the Nextcloud may follow and gives the invitation (valid once, 24 hours) to the Nextcloud admin,
 who pastes it under **Administration settings → UntrashOS**. While it joins, the Nextcloud must
 reach this NAS (same network, or over the internet with UPnP on the router).
@@ -943,12 +985,13 @@ reach this NAS (same network, or over the internet with UPnP on the router).
   does not have to scan the shares, and the disks can sleep.
 - The Nextcloud reads the files over WebDAV (switch it on under **Settings → Services**), with the
   rights of each user.
-- **Shares…** (per Nextcloud) changes the shares it follows on this NAS. On other NAS of the mesh
-  an admin chooses them there.
+- **Shares…** (per Nextcloud) changes the shares it follows on this NAS. A new share is not added
+  by itself: tick it here, and it appears in the Nextcloud within a few minutes. On other NAS of the
+  mesh an admin chooses them there.
 - A Nextcloud on a rented server cannot reach this NAS at home by its home network address. Do
   not forward the WebDAV ports on the router: that would put the users' passwords on the
-  internet. Instead, the Nextcloud server admin sets up the app's tunnel helper (see the app's
-  README). The NAS then connects to the server through UntrashMesh, and the Nextcloud reaches the
+  internet. Instead, the Nextcloud server admin sets up the app's tunnel helper
+  (`untrash-cloud-wg-<version>.tar.gz` in the same release; see the app's README). The NAS then connects to the server through UntrashMesh, and the Nextcloud reaches the
   shares inside that encrypted link. Nothing is forwarded at home.
 
 **UntrashApp.** The UntrashApp for phones (in development, not released yet) joins UntrashMesh
