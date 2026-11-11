@@ -85,7 +85,7 @@ finish() {	# $1 = DONE|FAILED, $2 = reason
 log "UntrashOS PartnerKey mode=$MODE, stick version=$VERSION"
 
 # ---------------------------------------------------------------- 1. layout
-grep -q 'ZyXEL\|Zyxel\|NAS542\|B403' /proc/cmdline /etc/modelname /firmware/mnt/info/modelname 2>/dev/null || log "model string not found (continuing, layout check decides)"
+grep -q 'ZyXEL\|Zyxel\|NAS54[02]\|NAS520\|B[124]03' /proc/cmdline /etc/modelname /firmware/mnt/info/modelname 2>/dev/null || log "model string not found (continuing, layout check decides)"
 cp $PROCMTD "$OUT/proc-mtd.txt"
 LAYOUT='mtd0: 00040000 00010000 "uloader"
 mtd1: 00080000 00010000 "barebox"

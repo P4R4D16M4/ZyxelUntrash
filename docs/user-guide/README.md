@@ -70,6 +70,13 @@ holds that NAS's backup and is marked as used. **Use a freshly written stick for
     5. It **switches the NAS off**.
 3. Leave the stick in the NAS.
 
+The run takes about five minutes. On one NAS540 the NAS did not switch itself off at the end: it
+disappeared from the network but stayed on. If the NAS is still on ten minutes after you switched
+it on and is no longer in the network, switch it off by hand (hold the power button, or unplug
+it). Everything is written and checked before the script asks for the power-off. To check, plug
+the stick into a PC: `UNTRASH/INSTALL_DONE` means the run succeeded, and the log is in
+`UNTRASH/install-<date>/install.log`.
+
 If any step fails, the script writes the backup back, leaves an `INSTALL_FAILED` marker on the stick
 and switches the NAS off. The NAS then starts the Zyxel firmware as before.
 
@@ -1057,5 +1064,7 @@ Both ways then do the same:
 
 1. The backup is checked against its checksums, and the stick gets the `ROLLBACK` order.
 2. The NAS restarts and runs the Zyxel firmware once. The firmware writes its boot data back from
-   the backup and switches the NAS off after a few minutes. Leave the stick in.
+   the backup and switches the NAS off after a few minutes. Leave the stick in. If the NAS stays
+   on (seen on a NAS540, see [section 1.3](#13-first-run-under-the-zyxel-firmware)), switch it off by
+   hand once it has left the network for a few minutes.
 3. Switch the NAS on: it starts the Zyxel firmware as before the installation.

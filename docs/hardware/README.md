@@ -117,7 +117,8 @@ the stick, write of the loader into `kernel2`, read-back verification.
   board but does **not** power-cycle the disks.  After such a warm reset the
   disk in bay 1 was not ready in time (SATA link down after 22 s); the loader
   now waits and re-probes the ports (`/sys/class/scsi_host/*/scan`).  `[HW]`
-- **Power off:** GPIO15 high (driver in patch 0001).  `[HW]`
+- **Power off:** GPIO15 high (driver in patch 0001).  `[HW]` on the NAS542;
+  on the first NAS540 the stock power-off did not cut power (§10).
 - **Board MCU** at I2C bus 0 address `0x0a` `[DEC]/[HW]`: temperature register
   `0x07`, fan tachometer `0x08`; SMBus word write to register `0x0a` =
   (command, value): command `0x07` power on after power loss (`0x0107` on,
@@ -283,6 +284,21 @@ the NAS (`untrash-hw.conf`).  `untrash-model` writes `/run/untrash/model.json`
 at boot; the Desk (login, overview), the installer page and MQTT show the
 model from it, and `untrash-storage` takes `BAY_NUM` (2 or 4) from
 `untrash_bays.bay_count()`.
+
+**First NAS540** (2026-11-11, stick 1.2, stock `AATB`, a repaired unit):
+- The PartnerKey install passed unchanged: flash layout check matched, stock
+  slot 2, loader into `kernel1`, env and loader read back and verified,
+  `INSTALL_DONE`.  The 1.2 hook logged "model string not found" (it only
+  looked for `NAS542`/`B403`; harmless, the layout check decides).  `[HW]`
+- The installer then booted from the stick (PFE up on the stock MACs, DHCP,
+  web installer at `untrash.local`).  `[HW]`
+- **The power-off at the end of the PartnerKey run did not cut power:** the
+  NAS left the network (shutdown ran) but stayed on until it was switched off
+  by hand.  `[HW]`  Cause open: the stock kernel is the same as on the
+  NAS542, so the GPIO15 path is the same code.  `[HYP]` the NAS540 power
+  circuit differs (19 V input), or the repair (input MLCCs near Q18/Q19/Q21)
+  matters.  Not yet tested: UntrashOS's own power-off (patch 0001) on this
+  unit.  The user guide (§1.3, §18) tells users to switch off by hand.
 
 **Not confirmed on hardware:** UntrashOS has not run on a NAS520.  Which of
 its two SoC ports is bay 1 is not known; `untrash_bays.py` assumes the
