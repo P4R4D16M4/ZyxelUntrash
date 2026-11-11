@@ -29,6 +29,12 @@ ssh -F /dev/null -o UserKnownHostsFile=<per-NAS known_hosts> root@<LAN_IP>
 
 Keep one `known_hosts` file per NAS. A reinstall (way A/B/C) creates new host keys.
 
+**With UntrashKey on** (Desk → System → UntrashKey, off by default) the boot-time path
+above steps aside: the dev stick has to be paired with its NAS like any key, and its
+`UNTRASH/ssh/authorized_keys` then work while it is plugged in, not only at boot
+(`untrashos/docs/architecture/untrashkey.md`). Pairing writes `UNTRASH/untrashkey/` onto
+the stick; copy it back with `install-*` when the stick is written anew.
+
 ## Adding a developer
 
 Every developer adds their own public key. Each one is a single line in

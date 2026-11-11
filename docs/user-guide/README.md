@@ -869,6 +869,27 @@ The editor works like a small loop-based music program. The buzzer plays one ton
 
 **Terminal** (administrators only) opens a shell on the NAS in the browser window.
 
+**UntrashKey** (off unless you switch it on) makes your UntrashOS stick a hardware key. The areas
+you choose then work only while the paired stick is plugged into the NAS: someone who has only
+your admin password (stolen, guessed, or a session someone took over) gets no shell and cannot
+change who has access.
+
+| Action | What happens |
+|---|---|
+| Pair a stick | Give the key a name and choose the administrator it belongs to, then pull the UntrashOS stick out of the NAS and plug it in again within two minutes. The stick gets a random key file (`UNTRASH/untrashkey/`); the NAS keeps only its fingerprint. Pairing the same stick again replaces its old key. |
+| Create a key stick | Makes a new stick for another administrator, or a replacement: type **FORMAT**, then plug a USB stick (about 1 GB or more) into the NAS within two minutes. **Everything on it is erased.** The NAS writes a complete UntrashOS stick onto it (current system, the stock backup of this NAS for the way back, its own key). |
+| Stick archive | What new sticks are made from. The installer stores it; on a NAS installed before 1.2, plug in the original UntrashOS stick and choose **Store the plugged stick**. |
+| Protected areas | **SSH** (sshd runs only while the key is in; pulling it ends every SSH session), **Web terminal** (closes when the key is pulled), **Accounts and access** (users, groups, admin rights, other users' passwords and sign-in, UntrashApp and mesh links), **Network exposure** (services and network settings, port forwarding, certificate, iSCSI, smart home), **System** (installing updates and their settings, back to stock, ending processes), **Data and storage** (RAID, shares, backup and cloud jobs, mesh shares and mirrors; off by default). |
+| UntrashKey on, Save | Switching on needs a paired stick plugged in, so you cannot lock yourself out. While it is on, every change here needs the stick too. |
+| SSH keys on the stick | Public SSH keys (one per line) that may log in as `root` while this stick is plugged in. They are stored on the stick, not on the NAS. |
+| Remove | The stick no longer opens anything. The last key can only be removed after switching UntrashKey off. |
+
+A key opens the protected areas only for the administrator it belongs to, and the log names the
+key ID of every action it opens. When a protected action needs the key, the Desk asks you to plug
+it in and carries on by itself as soon as it is in. **Lost the stick?** Sign in as admin, pair a new stick (that needs you at the
+NAS to plug it in), then remove the old key. Keep the stick out of the NAS when you do not need
+it: while it is plugged in, the protected areas are open.
+
 **UntrashMesh** connects several UntrashOS devices to one encrypted network (WireGuard), at home and
 over the internet. No cloud provider and no fixed IP address are needed: every device keeps an
 address book of the others, and a device whose address changes tells all members at once; members
