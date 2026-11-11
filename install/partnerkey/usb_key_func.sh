@@ -273,9 +273,19 @@ case $($ZTPK env-check "$OUT/env-untrash.bin") in OK*) ;; *) finish FAILED "buil
 macok() { case $1 in [0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]:[0-9A-Fa-f][0-9A-Fa-f]) echo $1 ;; esac; }
 M0=$(macok "$(envget "$OUT/mtd2-before-a.bin" ethaddr)"); M1=$(macok "$(envget "$OUT/mtd2-before-a.bin" eth2addr)")
 [ -n "$M0" ] || log "WARNING no valid ethaddr in the env (UntrashOS falls back to the driver's MAC)"
+# stock model (the stock update writes its firmware header's model id and
+# version per slot: B203 NAS520, B103 NAS540, B403 NAS542); UntrashOS shows
+# the model and sizes the bays from it (board/nas542 untrash_model.py).
+# device.env is sourced by later runs: no shell metacharacters, so
+# V5.21(ABAG.15) is stored as V5.21.ABAG.15
+MID=$(envget "$OUT/mtd2-before-a.bin" modelid_$A | tr -cd 'A-Za-z0-9' | cut -c1-8)
+FWV=$(envget "$OUT/mtd2-before-a.bin" fwversion_$A | tr '(' '.' | tr -cd 'A-Za-z0-9.' | cut -c1-32)
+log "stock model id ${MID:-unknown}, firmware ${FWV:-unknown}"
 cat >"$OUT/device.env" <<D
 ETH0_MAC=$M0
 ETH1_MAC=$M1
+MODEL_ID=$MID
+FWVERSION=$FWV
 ACTIVE_SLOT=$A
 LOADER_SLOT=$X
 LOADER_MTD=$XM

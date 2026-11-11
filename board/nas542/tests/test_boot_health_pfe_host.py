@@ -96,9 +96,18 @@ def main():
             cache, fwp = os.path.join(w, "cache"), os.path.join(w, "fwpath")
             rc = pfe(kernel1, cache, fwp)
             check("stock pfe_12_00_2 extracted from the stock kernel, firmware path set", rc == 0 and open(fwp).read() == cache and
-                  sorted(os.listdir(cache)) == ["class_c2000.elf", "tmu_c2000.elf", "util_c2000.elf", "util_c2000_revA0.elf"])
+                  sorted(os.listdir(cache)) == ["class_c2000.elf", "modelname", "tmu_c2000.elf", "util_c2000.elf",
+                                                "util_c2000_revA0.elf"])
+            check("stock model name taken along", open(os.path.join(cache, "modelname")).read() == "NAS542\n")
             check("log on the state", "copied from the stock kernel" in open(cache + ".log").read())
             check("cached set used without a source", pfe("/nonexistent", cache, fwp) == 0)
+            # a cache from before 1.2 has no modelname: taken from the stock kernel once
+            os.remove(os.path.join(cache, "modelname"))
+            check("old cache: model name added", pfe(kernel1, cache, fwp) == 0 and
+                  open(os.path.join(cache, "modelname")).read() == "NAS542\n")
+            os.remove(os.path.join(cache, "modelname"))
+            check("only one attempt (marker), set still used", pfe(kernel1, cache, fwp) == 0 and
+                  not os.path.exists(os.path.join(cache, "modelname")) and os.path.exists(cache + ".model-tried"))
             # rootfs1 does not contain the firmware, only the stock kernel does
             check("a stock rootfs instead of the kernel is refused",
                   pfe(os.path.join(ROOT, "inputs", "test", "stock-rootfs"), os.path.join(w, "cr"), os.path.join(w, "fpr")) != 0)
@@ -114,7 +123,8 @@ def main():
                 check("kernel with a pfe_13 set refused", pfe(k13, os.path.join(w, "c13"), os.path.join(w, "fp13")) != 0)
                 stock = os.path.join(w, "k12.uImage")
                 fw = os.path.join(cache)
-                fake_kernel(stock, [("lib/firmware/" + f, open(os.path.join(fw, f), "rb").read()) for f in sorted(os.listdir(fw))])
+                fake_kernel(stock, [("lib/firmware/" + f, open(os.path.join(fw, f), "rb").read()) for f in sorted(os.listdir(fw))
+                                    if f.endswith(".elf")])
                 check("fake kernel with the stock set accepted (test kernel builder sound)",
                       pfe(stock, os.path.join(w, "c12"), os.path.join(w, "fp12")) == 0)
     print("FAILURES %d" % FAIL)

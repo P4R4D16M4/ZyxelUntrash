@@ -6,14 +6,18 @@ of the stock kernel: KERNEL is the NAND partition kernel1 (/dev/mtdN) or a
 copy of it.  The stock uImage (Linux 3.2.54) is a zImage whose gzip payload
 carries the initramfs as a second gzip stream (newc cpio); the firmware is
 only there, not in rootfs1.  uImage header and data CRC are checked first.
+The stock model name (etc/modelname of that initramfs: NAS520, NAS540,
+NAS542) goes to OUTDIR/modelname (untrash_model.py).
 Exit 0 when at least one *_c2000*.elf was written, 1 otherwise."""
 import os
 import struct
 import sys
+import re
 import zlib
 
 GZ = b"\x1f\x8b\x08"
 MAX = 10 * 1024 * 1024   # size of the kernel1 partition
+MODEL_RE = re.compile(rb"^[A-Za-z0-9]{3,16}$")
 
 
 def fail(msg):
@@ -76,14 +80,22 @@ def main():
         if b and b.startswith(b"070701"):
             n = 0
             os.makedirs(sys.argv[2], exist_ok=True)
+            model = None
             for name, body in cpio(b):
                 base = os.path.basename(name)
                 if os.path.dirname(name) == "lib/firmware" and "_c2000" in base and base.endswith(".elf"):
                     with open(os.path.join(sys.argv[2], base), "wb") as o:
                         o.write(body)
                     n += 1
+                elif name == "etc/modelname" and MODEL_RE.match(body.strip()):
+                    model = body.strip()
+            if model:
+                with open(os.path.join(sys.argv[2], "modelname"), "wb") as o:
+                    o.write(model + b"\n")
             if n:
-                print("untrash-pfe-extract: %d firmware file(s) from %s" % (n, hdr[32:64].split(b"\0")[0].decode("ascii", "replace")))
+                print("untrash-pfe-extract: %d firmware file(s) from %s%s" % (
+                    n, hdr[32:64].split(b"\0")[0].decode("ascii", "replace"),
+                    ", model %s" % model.decode() if model else ""))
                 return
         off = image.find(GZ, off + 1)
     fail("no initramfs with lib/firmware/*_c2000*.elf in the stock kernel")

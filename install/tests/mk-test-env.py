@@ -11,6 +11,9 @@ from --seed, so tests never handle the real ones.
               config blocks; partnerkey-install-disabled-base-v3.sh), giving
               the factory shape: /bin/init ends with "boot".
   --curr/--next  set curr_bootfrom / next_bootfrom (default: unchanged)
+  --model ID  stock model of both slots: modelid_1/2 = ID, firmware code in
+              fwversion_1/2 to match (B203 NAS520 AASZ, B103 NAS540 AATB,
+              B403 NAS542 ABAG; stock firmware headers)
 """
 import argparse
 import hashlib
@@ -28,6 +31,7 @@ ap.add_argument('--pristine', action='store_true')
 ap.add_argument('--curr')
 ap.add_argument('--next')
 ap.add_argument('--seed', default='a')
+ap.add_argument('--model', choices=['B203', 'B103', 'B403'])
 a = ap.parse_args()
 
 blob = open(a.src, 'rb').read()
@@ -69,6 +73,12 @@ for name, data in files:
             if val is not None:
                 data, n = re.subn(rb'(?m)^%s="[^"]*"' % var.encode(), b'%s="%s"' % (var.encode(), val.encode()), data)
                 assert n, var
+        if a.model:
+            code = {'B203': b'AASZ', 'B103': b'AATB', 'B403': b'ABAG'}[a.model]
+            data, n = re.subn(rb'(?m)^(modelid_[12])="[^"]*"', rb'\1="' + a.model.encode() + b'"', data)
+            assert n == 2, 'modelid_1/2'
+            data, n = re.subn(rb'(?m)^(fwversion_[12]="V[0-9.]+\()[A-Z]{4}(\.)', rb'\1' + code + rb'\2', data)
+            assert n == 2, 'fwversion_1/2'
     out.append((name, scrub(name, data)))
 open(a.out, 'wb').write(envfs.pack(out, len(blob), prio, flags))
 print('%s: %d files, sha256 %s' % (a.out, len(out), hashlib.sha256(open(a.out, 'rb').read()).hexdigest()[:16]))

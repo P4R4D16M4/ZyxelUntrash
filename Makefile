@@ -85,6 +85,7 @@ test:
 	 else echo "skip PFE firmware layout check (needs make kernel + inputs/test/stock-pfe.ko)"; fi
 	python3 tools/manual/build.py --check
 	python3 $(BOARD)/tests/test_bays.py
+	python3 $(BOARD)/tests/test_model.py
 
 # APACHEROOT: unpacked apache2-bin libapr1 libaprutil1 libapache2-mod-authnz-external
 # debs; RCLONEROOT: unpacked rclone deb (apt-get download + dpkg-deb -x)

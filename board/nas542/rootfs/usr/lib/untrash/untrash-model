@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""untrash-model  (untrash-init, before systemd; docs/board-interface.md)
+
+Detects the NAS model (NAS520 / NAS540 / NAS542, pylib/untrash_model.py)
+and writes /run/untrash/model.json for the Desk, untrash-storage and MQTT.
+Prints the result; exit 0 also when the model stays unknown."""
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "pylib"))
+import untrash_model  # noqa: E402
+
+print(json.dumps(untrash_model.write(), sort_keys=True))

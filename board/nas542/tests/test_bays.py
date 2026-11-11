@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """PC test of pylib/untrash_bays.py (bay mapping) on fake sysfs trees:
 ata2 = bay 1, detect GPIOs, PMP links, USB disks ignored,
-table override."""
+table override, NAS520 (two bays, untrash_model.py)."""
 import importlib.util
 import json
 import os
+import shutil
 import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+PYLIB = os.path.join(HERE, "../rootfs/usr/lib/untrash/pylib")
+sys.path.insert(0, PYLIB)
+MODEL_ROOT = tempfile.mkdtemp()                 # no model: four bays, like before
+os.environ["ZT_MODEL_ROOT"] = MODEL_ROOT
 fails = 0
 
 
@@ -30,6 +35,14 @@ def tree(W, disks, detect):
     for i, v in enumerate(detect):
         os.makedirs(W + "/sys/class/gpio/gpio%d" % i, exist_ok=True)
         open(W + "/sys/class/gpio/gpio%d/value" % i, "w").write("%d\n" % v)
+
+
+def model(mid):
+    """Boot cache of untrash-model for model id MID (None: unknown)."""
+    os.makedirs(MODEL_ROOT + "/run/untrash", exist_ok=True)
+    open(MODEL_ROOT + "/run/untrash/device.env", "w").write("MODEL_ID=%s\n" % mid if mid else "")
+    import untrash_model
+    untrash_model.write(MODEL_ROOT)
 
 
 def load(W, table=None):
@@ -63,5 +76,19 @@ with tempfile.TemporaryDirectory() as W:
              "sdc": asm % (2, 2, 2), "sdd": asm % (3, 3, 3)}, [0, 0, 0, 0])
     check("ASM1061 adds the two PCIe bays after SoC AHCI", load(W).bays() ==
           {"disk1": "/dev/sdb", "disk2": "/dev/sda", "disk3": "/dev/sdc", "disk4": "/dev/sdd"})
+model("B203")
+with tempfile.TemporaryDirectory() as W:
+    tree(W, {"sda": AHCI % (1, 0, 0, 0), "sdb": AHCI % (2, 1, 1, 1)}, [0, 0, 1, 1])
+    b = load(W)
+    check("NAS520: two bays", b.bay_count() == 2 and b.bay_names() == ("disk1", "disk2"))
+    check("NAS520: ata2 = disk1, ata1 = disk2", b.bays() == {"disk1": "/dev/sdb", "disk2": "/dev/sda"})
+with tempfile.TemporaryDirectory() as W:
+    tree(W, {"sda": AHCI % (1, 0, 0, 0)}, [1, 0, 0, 0])
+    check("NAS520: detect GPIOs 2/3 are not bays, ata1 alone -> disk2", load(W).bays() == {"disk2": "/dev/sda"})
+    check("NAS520: a table entry for bay 3 is ignored", load(W, {"ata1": "disk3"}).bays() == {"disk2": "/dev/sda"})
+model("B403")
+with tempfile.TemporaryDirectory() as W:
+    check("NAS542: four bays", load(W).bay_count() == 4)
+shutil.rmtree(MODEL_ROOT)
 print("FAILURES %d" % fails)
 sys.exit(1 if fails else 0)

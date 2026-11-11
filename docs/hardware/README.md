@@ -1,7 +1,8 @@
 # Zyxel NAS542 — hardware reference
 
 The NAS542 as UntrashOS uses it: SoC, memory and register map, boot chain,
-flash layout, board peripherals and the pitfalls of the platform.  It is meant
+flash layout, board peripherals and the pitfalls of the platform.  The NAS540
+and the two-bay NAS520 are the same platform (§10).  It is meant
 to save a successor project (another kernel generation, another distribution)
 the reverse-engineering.
 
@@ -70,7 +71,11 @@ Stock boots `kernel<curr_bootfrom>` (1 or 2, from the env) with root on UBI
 (`ubi.mtd=2,2048`).  The Barebox environment is a **Barebox envfs** in the SPI
 `env` partition: header magic, CRC32 over data and superblock, one inode per
 file (`install/envfs.py` reads and writes it).  The stock environment
-carries the device MAC addresses; keep dumps of it private.
+carries the device MAC addresses; keep dumps of it private.  Every stock
+firmware update also records, per slot, the model id and version from the
+header of the firmware file: `modelid_<n>`, `fwversion_<n>`
+(`fwupgrade_erase_write_ras.sh`; e.g. `B403`, `V5.21(ABAG.15)`), see §10.
+UntrashOS keeps all of these.
 
 **UntrashOS boot chain** `[HW]`:
 
@@ -132,7 +137,7 @@ the stick, write of the loader into `kernel2`, read-back verification.
   `hdd1..4-red` = 49/51/53/55 (device tree).
 - **Two bays on the SoC AHCI, two behind an ASMedia ASM1061** (PCIe x1, 2-port
   AHCI, `1b21:0612`) on the backplane (PCB `45-403-000031`); the stock firmware
-  drives all four bays.  On the bench without the backplane there is no PCIe
+  drives all four bays (the NAS520 has no ASM1061 and two bays, §10).  On the bench without the backplane there is no PCIe
   endpoint, so any kernel logs a failed link there ("PCIe0: Link Up Failed").
   Linux 6.6 needs **bit 0 of `SD_CMU_CTL`
   set for PCIe too** (patch 0015); then CMU, root port and endpoint come up and
@@ -219,6 +224,69 @@ firmware byte for byte.
 
 - Physical bay ↔ controller port mapping and the ASM1061 PERST#/power net are
   not traced.
+- NAS520: never run; bay 1 ↔ SoC port and the detect GPIOs of the two missing
+  bays are unknown (§10).
 - RTC alarm (scheduled power-on) is implemented but not observed on hardware.
 - GIC/SCU base addresses are taken from the working reconstruction, not read
   from hardware.
+
+## 10. Models: NAS520, NAS540, NAS542
+
+The three are one platform.  Compared `[DUMP]` (2026-11-11): the stock
+firmware files V5.21(AASZ.5) (NAS520, 2020), V5.21(AATB.10) (NAS540) and
+V5.21(ABAG.10) (NAS542, both 2023).  A firmware file starts with a TLV
+header (magic `SIG`; tag `0x0001` version, `0x0101` model id, then section
+offsets), followed by the uImage of the stock kernel at offset `0x140` and a
+gzip'd ext2 system image.
+
+| | NAS520 | NAS540 | NAS542 |
+|---|---|---|---|
+| Model id (`modelid_<n>`) | `B203` | `B103` | `B403` |
+| Firmware code (`fwversion_<n>`) | `AASZ` | `AATB` | `ABAG` |
+| Bays | 2 | 4 | 4 |
+| LAN ports | 2 | 2 | 2 |
+
+- **Stock kernel 3.2.54:** NAS540 and NAS542 are byte-identical apart from
+  build time stamps; the NAS520 kernel is an older build of the same sources
+  (every readable string identical except the build path).  No board
+  variants in the kernel, no device tree.  `[DUMP]`
+- **PFE firmware** (`class/tmu/util_c2000.elf`): byte-identical in all three
+  and in the hardware-proven ABAG15 kernel1; `untrash-pfe-extract` reads it
+  from the NAS520 kernel too.  `[DUMP]`
+- **The only hardware difference in the stock software:**
+  `intern_disk_chker` knows the SCSI hosts `0:0:0:0` and `1:0:0:0` on the
+  NAS520 (the SoC AHCI ports) and additionally `2:0:0:0`, `3:0:0:0` on the
+  NAS540/542 (the ASM1061, §5).  Its `-n` is the stock `BAY_NUM`, which also
+  sizes the md0/md1 firmware and swap mirrors
+  (`storage_asm_mntfw_swap.sh`: `mdadm --grow --raid-devices=$BAY_NUM`).
+  The NAS520 is therefore the NAS540/542 board without the ASM1061.  `[DUMP]`
+- Everything else model-specific in the stock software is the name
+  (`/etc/modelname`, server name, mail subject).  `[DUMP]`
+- Flash layout and Barebox environment: the same (the community device tree
+  `ls1024a-nas5xx.dtsi` is shared, `ls1024a-nas520.dts` only sets
+  `drive-bays = <2>`; the PartnerKey layout check matches).  `[DUMP]/[HYP]`
+
+**Model detection in UntrashOS** (`board/nas542/rootfs/usr/lib/untrash/pylib/untrash_model.py`):
+
+1. The PartnerKey records `modelid_<stock slot>` and `fwversion_<stock slot>`
+   in the install run's `device.env` (`MODEL_ID`, `FWVERSION`, the version
+   without parentheses: `V5.21.ABAG.15`, because later runs source the file).
+   The installer passes them on with the MAC addresses; `untrash-init` puts
+   them into `/run/untrash/device.env`.
+2. Otherwise `etc/modelname` from the initramfs of the stock kernel, which
+   `untrash-pfe-extract` stores next to the PFE firmware
+   (`/state/firmware/pfe/modelname`; a cache from before 1.2 gets it once).
+3. Otherwise unknown: "Zyxel NAS5xx", four bays.
+
+The running system cannot read the SPI env itself: loading `spi-nor` hangs
+the NAS (`untrash-hw.conf`).  `untrash-model` writes `/run/untrash/model.json`
+at boot; the Desk (login, overview), the installer page and MQTT show the
+model from it, and `untrash-storage` takes `BAY_NUM` (2 or 4) from
+`untrash_bays.bay_count()`.
+
+**Not confirmed on hardware:** UntrashOS has not run on a NAS520.  Which of
+its two SoC ports is bay 1 is not known; `untrash_bays.py` assumes the
+NAS542 wiring (`ata2` = bay 1), a wrong guess only swaps the bay numbers
+shown (md assembles by superblock).  Without the ASM1061 the PCIe driver
+finds no link and the probe fails cleanly (as before patch 0015 on the
+NAS542, V606).

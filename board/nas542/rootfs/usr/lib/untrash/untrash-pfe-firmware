@@ -56,13 +56,17 @@ usable() {	# $1 = directory with *_c2000.elf
 	[ "$(dmem_sh "$1/class_c2000.elf")" = $want_class ] && [ "$(dmem_sh "$1/util_c2000.elf")" = $want_util ]
 }
 
-if ! usable "$D"; then
+stock_kernel() {	# -> $src: the stock kernel copy (stick) or NAND kernel<SLOT>
 	src=${ZT_PFE_KERNEL:-}
 	[ -z "$src" ] && [ -n "$KFILE" ] && [ -s "$KFILE" ] && src=$KFILE
 	if [ -z "$src" ]; then
 		mtd=$(sed -n "s/^mtd\([0-9]*\): .* \"kernel$SLOT\"\$/\1/p" /proc/mtd)
-		[ -n "$mtd" ] && src=/dev/mtd$mtd || log "no NAND kernel$SLOT: no PFE firmware"
+		[ -n "$mtd" ] && src=/dev/mtd$mtd || log "no NAND kernel$SLOT: $1"
 	fi
+}
+
+if ! usable "$D"; then
+	stock_kernel "no PFE firmware"
 	if [ -n "$src" ]; then
 		rm -rf "$D.new"
 		if out=$(python3 "$LIB/untrash-pfe-extract" "$src" "$D.new" 2>&1) && usable "$D.new"; then
@@ -74,5 +78,23 @@ if ! usable "$D"; then
 	fi
 fi
 usable "$D" || exit 1
+# The stock model name (D/modelname, untrash_model.py) comes with every new
+# extraction.  A cache from before 1.2 has none: take it from the stock
+# kernel once (D.model-tried keeps a failed attempt from reading the NAND on
+# every boot).
+if [ ! -s "$D/modelname" ] && [ ! -e "$D.model-tried" ]; then
+	stock_kernel "no stock model name"
+	if [ -n "$src" ]; then
+		rm -rf "$D.m"
+		python3 "$LIB/untrash-pfe-extract" "$src" "$D.m" >/dev/null 2>&1
+		if [ -s "$D.m/modelname" ]; then
+			cp "$D.m/modelname" "$D/modelname" && log "stock model $(cat "$D/modelname") from $src"
+		else
+			log "no stock model name in $src"
+		fi
+		rm -rf "$D.m"
+	fi
+	: >"$D.model-tried"; sync
+fi
 printf '%s' "$D" >"$FWPATH"
 log "firmware path $D"

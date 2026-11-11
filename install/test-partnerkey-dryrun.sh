@@ -105,6 +105,7 @@ MK "$W/env-stock1" --pristine --seed nas1
 MK "$W/env-stock2" --pristine --curr 2 --next 2 --seed nas2
 MK "$W/env-dev" --seed dev
 MK "$W/env-pending" --pristine --curr 1 --next 2 --seed nas3
+MK "$W/env-nas520" --pristine --curr 2 --next 2 --seed nas4 --model B203
 
 setup() {	# $1 = env: fresh stock NAS + fresh stick
 	rm -rf "$W/dev" "$W/key" "$W/once"; mkdir -p "$W/dev" "$W/key"
@@ -143,6 +144,8 @@ check "device.env KX_OLD" "$(sed -n 's/^KX_OLD_SHA256=//p' "$d/device.env")" "$k
 check "device.env ETH0_MAC = this NAS's ethaddr" "$(sed -n 's/^ETH0_MAC=//p' "$d/device.env")" "$("$W/ztpk" env-get "$W/env-stock1" ethaddr)"
 check "device.env ETH1_MAC = eth2addr" "$(sed -n 's/^ETH1_MAC=//p' "$d/device.env")" "$("$W/ztpk" env-get "$W/env-stock1" eth2addr)"
 check "MAC is the scrubbed test value" "$(sed -n 's/^ETH0_MAC=//p' "$d/device.env" | cut -c1-8)" "02:5A:54"
+check "device.env MODEL_ID = modelid_1 of the env" "$(sed -n 's/^MODEL_ID=//p' "$d/device.env")" "$("$W/ztpk" env-get "$W/env-stock1" modelid_1)"
+check "device.env FWVERSION = fwversion_1 without parentheses" "$(sed -n 's/^FWVERSION=//p' "$d/device.env")" "$("$W/ztpk" env-get "$W/env-stock1" fwversion_1 | tr '(' . | tr -d ')')"
 check "flash backup 9 files, re-read" "$(cat "$d/flash/VERIFIED" | cut -d' ' -f1)" "files=9"
 check "backup env bit-exact" "$(cd "$d/flash" && sha256sum -c --quiet SHA256SUMS && sha mtd2.raw.bin)" "$e"
 check "etc-zyxel.tar saved" "$(tar -tf "$d/etc-zyxel.tar" | grep -c 'ugs_conf.db$')" 1
@@ -161,6 +164,13 @@ setup "$W/env-stock2"; k4=$(sha "$W/dev/mtd4"); k6=$(sha "$W/dev/mtd6"); e=$(sha
 check "INSTALL_DONE" "$(marker INSTALL_DONE)" "loader in kernel1, UntrashOS env active"
 check "kernel1 = loader" "$(sha "$W/dev/mtd4")" "$L1"
 check "kernel2 (stock) untouched" "$(sha "$W/dev/mtd6")" "$k6"
+echo "4b. NAS520 (model id B203), slot 2 active: same way, model recorded"
+setup "$W/env-nas520"; k6=$(sha "$W/dev/mtd6"); run; d=$(lastrun install)
+check "INSTALL_DONE" "$(marker INSTALL_DONE)" "loader in kernel1, UntrashOS env active"
+check "kernel2 (stock) untouched" "$(sha "$W/dev/mtd6")" "$k6"
+check "device.env MODEL_ID" "$(sed -n 's/^MODEL_ID=//p' "$d/device.env")" "B203"
+check "device.env FWVERSION is an AASZ firmware" "$(sed -n 's/^FWVERSION=V[0-9]*\.[0-9]*\.\([A-Z]*\)\..*/\1/p' "$d/device.env")" "AASZ"
+setup "$W/env-stock2"; run
 echo "5. update of the loader (installed NAS from 4)"
 cp "$W/tree-upd/UNTRASH/"{manifest.env,loader.uImage} "$W/key/UNTRASH/"; ecur=$(sha "$W/dev/mtd2"); sleep 1; run
 . "$W/tree-upd/UNTRASH/manifest.env"

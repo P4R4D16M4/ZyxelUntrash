@@ -63,7 +63,10 @@ submodule `untrashos/`; clone with `git clone --recursive`.
 
 ## Status
 
-UntrashOS runs as the daily system on a NAS542 with four disks.  The images
+UntrashOS runs as the daily system on a NAS542 with four disks.  The NAS540
+and the two-bay NAS520 are the same platform; UntrashOS recognizes the model
+from the stock firmware and shows it, but it has not been run on a NAS520
+([hardware reference, §10](docs/hardware/README.md#10-models-nas520-nas540-nas542)).  The images
 contain no proprietary firmware: the network firmware of the SoC (NXP PFE) is
 extracted on the NAS from the stock kernel already in its flash.  Everything
 on the stick is built from this repository.

@@ -136,7 +136,7 @@ The first-setup and installer screenshots (`d00`, `i*`) are made by hand.
 | `kernel/` | patch series for Linux 6.6.145, full configs (system, loader), build script |
 | `loader/` | loader initramfs (`rc.ssh`, `zt-init.c`, module list) and its BusyBox config |
 | `loader/slot/` | stage-1 loader `zt-loader`, `zt-blk.c` (md/LVM/dm), slot initrd `zt-slotinit.c`, tests |
-| `board/nas542/` | board part of the system image: `board.conf`, `rootfs/` (power MCU, PFE firmware, bays, fan/PCIe units), `slot-hook.sh`, slot initrd builder, tests |
+| `board/nas542/` | board part of the system image: `board.conf`, `rootfs/` (power MCU, PFE firmware, model detection, bays, fan/PCIe units), `slot-hook.sh`, slot initrd builder, tests |
 | `install/` | installer stick, PartnerKey hook, Barebox envfs, stock restore |
 | `nas-tools/` | static helpers: fan, I2C, mount, blackbox, SMART |
 | `tools/` | input fetcher, user guide builder, PFE and loader tools |
