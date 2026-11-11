@@ -3,7 +3,7 @@
 > **You only want to install UntrashOS? You do not need to build anything.**
 > Download the ready stick image and write it to a USB stick:
 >
-> 1. Download [`untrash-stick-1.2.img.xz`](https://github.com/P4R4D16M4/ZyxelUntrash/releases/download/1.2/untrash-stick-1.2.img.xz)
+> 1. Download [`untrash-stick-1.2.2.img.xz`](https://github.com/P4R4D16M4/ZyxelUntrash/releases/download/1.2.2/untrash-stick-1.2.2.img.xz)
 >    (about 270 MB; all versions are on the [Releases](https://github.com/P4R4D16M4/ZyxelUntrash/releases) page).
 > 2. Install [balenaEtcher](https://etcher.balena.io/) or
 >    [Raspberry Pi Imager](https://www.raspberrypi.com/software/) (Windows, macOS, Linux).

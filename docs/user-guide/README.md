@@ -221,6 +221,13 @@ services (SMB, SSH, FTP, NFS, media server, time, disk spin-down, mDNS).
 Administrators see all apps. Normal users see **Files**, **Channels**, **Manual** and **My account**
 ([section 17](#17-working-as-a-normal-user)).
 
+**Phone view.** On a phone (a screen up to 760 pixels wide, or in the UntrashApp) the Desk starts
+in the phone view instead of windows and dock: a home page with a status card and the app groups,
+and one app at a time on the whole screen with **back** in the top bar. The back button of the
+phone works as well. Side lists become a row of buttons at the top, dialogs and menus slide up
+from the bottom. Click your user name and choose **Phone view** or **Desktop view** to switch;
+the choice is kept in this browser.
+
 ## 4. Files
 
 ![Files: a folder in the Photos share](img/d03-files-photos.webp)
