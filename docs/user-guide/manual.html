@@ -87,7 +87,7 @@ page, or the link at the top of the installer. All of them offer this guide as a
 <p>Write the image to the stick with any image writer (balenaEtcher, Raspberry Pi Imager, <code>dd</code>).
 On Linux, the project script does the same with extra checks. Replace <code>/dev/sdX</code> with
 your stick. Every byte on that device is overwritten:</p>
-<pre><code class="language-bash">sudo os/install/write-stick.sh untrash-stick-&lt;version&gt;.img /dev/sdX
+<pre><code class="language-bash">sudo install/write-stick.sh untrash-stick-&lt;version&gt;.img /dev/sdX
 </code></pre>
 <p>The stick image is the same for every NAS542. Nothing on it is made for a particular device.
 Everything that belongs to one NAS is created on that NAS during the first run. The stick then
@@ -106,12 +106,19 @@ holds that NAS's backup and is marked as used. <strong>Use a freshly written sti
 </li>
 <li>Leave the stick in the NAS.</li>
 </ol>
+<p>The run takes about five minutes. On one NAS540 the NAS did not switch itself off at the end: it
+disappeared from the network but stayed on. If the NAS is still on ten minutes after you switched
+it on and is no longer in the network, switch it off by hand (hold the power button, or unplug
+it). Everything is written and checked before the script asks for the power-off. To check, plug
+the stick into a PC: <code>UNTRASH/INSTALL_DONE</code> means the run succeeded, and the log is in
+<code>UNTRASH/install-&lt;date&gt;/install.log</code>.</p>
 <p>If any step fails, the script writes the backup back, leaves an <code>INSTALL_FAILED</code> marker on the stick
 and switches the NAS off. The NAS then starts the Zyxel firmware as before.</p>
 <h3 id="14-open-the-installer">1.4 Open the installer</h3>
 <p>Switch the NAS on again. The loader starts the installer from the stick. After a minute or two, open</p>
-<p><strong><a href="http://zyxel-untrash.local/">http://zyxel-untrash.local/</a></strong> in the browser. If your router does not resolve <code>.local</code> names,
-try <code>http://zyxel-untrash/</code> or the address your router lists for the NAS.</p>
+<p><strong><a href="http://untrash.local/">http://untrash.local/</a></strong> in the browser. If your router does not resolve <code>.local</code> names,
+try <code>http://untrash/</code> or the address your router lists for the NAS.  If another UntrashOS
+device already uses the name, the installer answers as <code>http://untrash-2.local/</code> (then <code>-3</code>, …).</p>
 <p><img alt="Installer: what was found on the stick and the disks" src="img/i01-installer-overview.webp" /></p>
 <table>
 <thead>
@@ -143,7 +150,7 @@ try <code>http://zyxel-untrash/</code> or the address your router lists for the 
 </tr>
 <tr>
 <td><strong>Language</strong> (top right)</td>
-<td>Deutsch, English, Français. The installed system starts with the language chosen here.</td>
+<td>English, Deutsch, Français. The installed system starts with the language chosen here.</td>
 </tr>
 <tr>
 <td><strong>User guide</strong> (top)</td>
@@ -169,19 +176,19 @@ volume. Only <strong>way A</strong> erases a disk.</p>
 <td><strong>B – Keep and take over</strong></td>
 <td>New installation on a Zyxel volume. Users, groups, shares and SMB passwords of the Zyxel firmware are taken over on the first start.</td>
 <td>kept</td>
-<td><code>BEHALTEN</code></td>
+<td><code>KEEP</code></td>
 </tr>
 <tr>
 <td><strong>C – Keep, set up anew</strong></td>
 <td>New installation on a Zyxel volume. A new <code>admin</code> password and a network name are set. Every top-level folder becomes a share for <code>admin</code>. The old users are not taken over.</td>
 <td>kept</td>
-<td><code>BEHALTEN</code></td>
+<td><code>KEEP</code></td>
 </tr>
 <tr>
 <td><strong>A – Erase the disk and reinstall</strong></td>
 <td>The chosen disk is erased and gets its own UntrashOS layout (two system slots, state, swap, data area with btrfs).</td>
 <td><strong>erased</strong> on that disk</td>
-<td><code>LÖSCHEN &lt;disk&gt;</code>, e.g. <code>LÖSCHEN sdc</code></td>
+<td><code>DELETE &lt;disk&gt;</code>, e.g. <code>DELETE sdc</code></td>
 </tr>
 <tr>
 <td><strong>D – Back to the stock firmware</strong></td>
@@ -237,7 +244,7 @@ volume. Only <strong>way A</strong> erases a disk.</p>
 </tr>
 <tr>
 <td>Network name</td>
-<td>text, default <strong>zyxel-untrash</strong></td>
+<td>text, default <strong>untrash</strong></td>
 <td>1–15 letters, digits or hyphens. The NAS is reachable as <code>&lt;name&gt;.local</code>.</td>
 </tr>
 <tr>
@@ -306,8 +313,10 @@ firmware.</p>
 this guide.</p>
 </blockquote>
 <h2 id="2-first-start-and-sign-in">2. First start and sign-in</h2>
-<p>Open <code>http://&lt;network name&gt;.local/</code> (for example <code>http://zyxel-untrash.local/</code>), or the address
-of the NAS.</p>
+<p>Open <code>http://&lt;network name&gt;.local/</code> (for example <code>http://untrash.local/</code>), or the address
+of the NAS.  A NAS with the default name that finds <code>untrash</code> taken in the network becomes
+<code>untrash-2</code> (then <code>untrash-3</code>, …) and keeps that name from then on; a name you chose, or the
+name of the stock system (way B), is never changed.</p>
 <p><strong>After way A</strong> the NAS has no users yet. The first page asks for:</p>
 <table>
 <thead>
@@ -345,7 +354,7 @@ After way C, use <code>admin</code> and the password you chose in the installer.
 <tbody>
 <tr>
 <td>Language</td>
-<td>Language of this browser: Deutsch, English, Français.</td>
+<td>Language of this browser: English, Deutsch, Français.</td>
 </tr>
 <tr>
 <td>User name, Password</td>
@@ -377,7 +386,7 @@ After way C, use <code>admin</code> and the password you chose in the installer.
 </tr>
 <tr>
 <td><strong>Dock</strong></td>
-<td>All apps. Hover over an icon to see its name. The <strong>power button</strong> at the right end switches the NAS off or restarts it (<a href="#16-status-logs-and-system-tools">section 16</a>).</td>
+<td>All apps. <strong>Overview</strong> and <strong>Files</strong> sit directly in the dock; the other apps are grouped in <strong>Data</strong>, <strong>Network</strong>, <strong>Media</strong>, <strong>System</strong> and <strong>Help</strong>: a click on a group opens its apps. Hover over an icon to see its name. The <strong>power button</strong> at the right end switches the NAS off or restarts it (<a href="#16-status-logs-and-system-tools">section 16</a>).</td>
 </tr>
 <tr>
 <td><strong>Windows</strong></td>
@@ -392,8 +401,11 @@ services (SMB, SSH, FTP, NFS, media server, time, disk spin-down, mDNS).</p>
 (<a href="#17-working-as-a-normal-user">section 17</a>).</p>
 <h2 id="4-files">4. Files</h2>
 <p><img alt="Files: a folder in the Photos share" src="img/d03-files-photos.webp" /></p>
-<p>Pick a share on the left and click folders to open them. The path above the list leads back.
+<p>Pick a share on the left. The path above the list leads back.
 Shares whose volume is missing are listed under <em>Volume missing</em> and cannot be opened.</p>
+<p><strong>Selecting.</strong> Click a row to select it; <strong>Ctrl</strong>+click adds or removes one, <strong>Shift</strong>+click selects a
+range, the box in the header selects all. Click a name (or double-click the row) to open it. The
+column headers sort by name, size or date.</p>
 <table>
 <thead>
 <tr>
@@ -407,8 +419,28 @@ Shares whose volume is missing are listed under <em>Volume missing</em> and cann
 <td>Creates a folder in the current folder.</td>
 </tr>
 <tr>
-<td><strong>Upload</strong></td>
-<td>Uploads files from your device into the current folder.</td>
+<td><strong>Upload</strong> / <strong>Upload a folder</strong></td>
+<td>Uploads files, or a whole folder with its subfolders, into the current folder. You can also drag files and folders from your computer onto the list (or onto a folder in it). The progress shows below the list.</td>
+</tr>
+<tr>
+<td><strong>Download</strong></td>
+<td>One file as it is; a folder or several items as one ZIP file.</td>
+</tr>
+<tr>
+<td><strong>Cut</strong>, <strong>Copy</strong>, <strong>Paste</strong></td>
+<td>Copies or moves the selection, also into another share: open the target folder and choose <strong>Paste</strong>. When names already exist you choose: keep both (the new ones get a number, "name (2)"), replace, or skip. Large copies run on the NAS in the background; the progress shows below the list and in the <strong>Transfers</strong> window (see below).</td>
+</tr>
+<tr>
+<td><strong>Rename</strong></td>
+<td>Renames the selected item.</td>
+</tr>
+<tr>
+<td><strong>Delete</strong></td>
+<td>Deletes the selection after a confirmation. On a share with a recycle bin the items go to its folder <code>recycle</code> (as for deletions over the network); inside <code>recycle</code>, or without a recycle bin, they are deleted permanently.</td>
+</tr>
+<tr>
+<td><strong>Filter</strong> field</td>
+<td>Filters the current folder while you type; <strong>Enter</strong> searches the subfolders too. A click on a hit opens its folder.</td>
 </tr>
 <tr>
 <td><strong>Exports</strong></td>
@@ -418,21 +450,40 @@ Shares whose volume is missing are listed under <em>Volume missing</em> and cann
 <td><strong>Shared links</strong></td>
 <td>Your download links with their expiry: <strong>Copy</strong> the address again or <strong>Delete</strong> the link. Administrators see the links of all users.</td>
 </tr>
+</tbody>
+</table>
+<p><strong>More</strong> (<strong>⋯</strong> at the end of a row, or a right click) has the same actions plus <strong>Share link…</strong> (a
+download link, see below), <strong>Export…</strong> (copy or convert, see below), <strong>As share…</strong> (folders, admins
+only: a share of its own, <a href="#5-shares">section 5</a>) and <strong>Properties</strong> (with the size of a folder).
+Drag items onto a folder (or onto a part of the path above the list) to move them there; hold <strong>Ctrl</strong>
+to copy instead.</p>
+<p><strong>Transfers.</strong> The <strong>Transfers</strong> window (in the dock; for administrators under <strong>Data</strong>) lists every
+copy, move, upload and download of the Desk with its progress, speed and the time left. While
+something runs, the top bar shows how many transfers are running; a click opens the window. <strong>Pause</strong>
+holds a copy or a move where it is and <strong>Resume</strong> continues it; <strong>Cancel</strong> ends a transfer and removes
+the partly written file. Finished transfers stay in the list for an hour; <strong>✕</strong> or <strong>Finished ones
+from the list</strong> remove them earlier. Users see their own transfers, administrators those of all users
+and also the jobs of the download service. Copies run as a process of their own, so the Desk stays
+responsive while a large copy runs, also onto a partner volume.</p>
+<table>
+<thead>
 <tr>
-<td><strong>Export</strong> (per row)</td>
-<td>Copies or converts a file or folder, see below.</td>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ctrl+A, Ctrl+C, Ctrl+X, Ctrl+V</td>
+<td>select all, copy, cut, paste</td>
 </tr>
 <tr>
-<td><strong>Share</strong> (per row)</td>
-<td>Creates a download link, see below.</td>
+<td>Delete, F2, Enter</td>
+<td>delete, rename, open</td>
 </tr>
 <tr>
-<td><strong>As share</strong> (per folder, admins only)</td>
-<td>Makes the folder a share of its own (<a href="#5-shares">section 5</a>).</td>
-</tr>
-<tr>
-<td><strong>Rename</strong>, <strong>Delete</strong> (per row)</td>
-<td>Renames, or deletes permanently after a confirmation. (The recycle bin applies to deletions over the network, for example from Windows.)</td>
+<td>Backspace, Escape, ↑ ↓</td>
+<td>up one folder, clear the selection, move the selection</td>
 </tr>
 </tbody>
 </table>
@@ -483,7 +534,7 @@ Shares whose volume is missing are listed under <em>Volume missing</em> and cann
 <tr>
 <td>Password</td>
 <td>optional, at least 4 characters</td>
-<td>Asked before the download.</td>
+<td>Asked before the download. After 5 wrong passwords the link waits, longer with every further try (at most 5 minutes).</td>
 </tr>
 </tbody>
 </table>
@@ -673,7 +724,7 @@ so the Zyxel firmware can still read them after the way back.</p>
 <tr>
 <td><strong>+ New volume</strong></td>
 <td>New array on free disks, see below.</td>
-<td><code>FORMATIEREN</code></td>
+<td><code>FORMAT</code></td>
 </tr>
 <tr>
 <td><strong>Rename</strong></td>
@@ -683,22 +734,22 @@ so the Zyxel firmware can still read them after the way back.</p>
 <tr>
 <td><strong>Add disks</strong></td>
 <td>Extends the array with free disks; the RAID type stays.</td>
-<td><code>FORMATIEREN</code></td>
+<td><code>FORMAT</code></td>
 </tr>
 <tr>
 <td><strong>Change RAID type</strong></td>
 <td>Moves to the next RAID type (for example RAID 1 → RAID 5) with additional disks.</td>
-<td><code>FORMATIEREN</code></td>
+<td><code>FORMAT</code></td>
 </tr>
 <tr>
 <td><strong>Spare disk</strong></td>
 <td>Adds a hot spare that takes over when a disk fails.</td>
-<td><code>FORMATIEREN</code></td>
+<td><code>FORMAT</code></td>
 </tr>
 <tr>
 <td><strong>Repair</strong> (only for degraded arrays)</td>
 <td>Rebuilds the array onto a free disk.</td>
-<td><code>FORMATIEREN</code></td>
+<td><code>FORMAT</code></td>
 </tr>
 <tr>
 <td><strong>Extend</strong></td>
@@ -708,7 +759,7 @@ so the Zyxel firmware can still read them after the way back.</p>
 <tr>
 <td><strong>Delete</strong></td>
 <td>Deletes the volume and every share on it.</td>
-<td><code>LÖSCHEN</code></td>
+<td><code>DELETE</code></td>
 </tr>
 </tbody>
 </table>
@@ -752,6 +803,26 @@ volume, is lost. A running job is shown with its progress and log.</p>
 </tr>
 </tbody>
 </table>
+<h3 id="ram-boost">RAM boost</h3>
+<p>The NAS has 1 GB of RAM. With the RAM boost, an SSD in any bay becomes a
+memory extension: the NAS moves memory that is not in use right now (idle
+services, background jobs) to the SSD and keeps the RAM free for what runs.
+<strong>Set up</strong> in the <em>RAM boost</em> section offers every free SSD.</p>
+<ul>
+<li><strong>Needs an SSD.</strong> Hard disks are not offered. The SSD is erased (type
+  <strong>FORMAT</strong> to confirm).</li>
+<li><strong>8 GB</strong> of the SSD are used; the rest stays free and spares the SSD.</li>
+<li><strong>One bay less for RAID:</strong> that bay no longer counts for volumes, so at
+  most 3 data disks remain.</li>
+<li>It helps when many apps and jobs run at once. When the RAM is enough,
+  nothing gets faster.</li>
+<li><strong>Do not pull the SSD while the boost is on.</strong> <em>Switch off</em> moves the
+  offloaded memory back into RAM first, then erases the SSD and frees the
+  bay. If more is offloaded than fits back, it refuses: stop apps or restart
+  the NAS, then switch off.</li>
+</ul>
+<p>Need more storage space instead? With UntrashMesh a second NAS shares its
+volumes with this one as partner volumes, with up to 4 more disks.</p>
 <h3 id="iscsi">iSCSI</h3>
 <p>Volumes can be offered to other computers as iSCSI disks.</p>
 <table>
@@ -873,7 +944,7 @@ asks for a name and a description. Groups are used for share rights.</p>
 <tbody>
 <tr>
 <td>Host name</td>
-<td>default <strong>zyxel-untrash</strong></td>
+<td>default <strong>untrash</strong> (<code>untrash-2</code>, … if taken)</td>
 <td>Name of the NAS in the network (<code>&lt;host name&gt;.local</code>).</td>
 </tr>
 <tr>
@@ -907,9 +978,17 @@ asks for a name and a description. Groups are used for share rights.</p>
 way back: connect the NAS directly to a PC with a network cable. It is then reachable by its
 automatic address as <code>&lt;host name&gt;.local</code>.</p>
 <p><strong>Router (UPnP port forwarding)</strong> opens ports on the router for access from the internet. For each
-service enter a WAN port (empty = off): Untrash Desk (HTTP), Untrash Desk (HTTPS), FTP, SSH,
-WebDAV, WebDAV (HTTPS), Web Publishing, media server. The table shows what the router currently
-forwards. <strong>Forwarded services are reachable from the internet.</strong> Use HTTPS and strong passwords.</p>
+service enter a WAN port (empty = off): Untrash Desk (HTTPS), FTP, SSH, WebDAV, WebDAV (HTTPS),
+Web Publishing, media server. The table shows what the router currently forwards. <strong>Forwarded
+services are reachable from the internet.</strong> Use HTTPS and strong passwords: over FTP, WebDAV and
+Web Publishing without HTTPS, passwords cross the internet unencrypted.</p>
+<ul>
+<li>The Desk over plain HTTP is <strong>never</strong> forwarded, even if the old Zyxel firmware did. Its sign-in
+  would cross the internet unencrypted.</li>
+<li>The Desk accepts a sign-in over plain HTTP only from the home network and from UntrashMesh. From
+  the internet it needs HTTPS (<a href="#certificate--https">Certificate / HTTPS</a>), even when a forwarding
+  was set up on the router by hand.</li>
+</ul>
 <h2 id="9-settings">9. Settings</h2>
 <p><img alt="Settings: services" src="img/d22-settings-services.webp" /></p>
 <h3 id="language">Language</h3>
@@ -924,12 +1003,12 @@ forwards. <strong>Forwarded services are reachable from the internet.</strong> U
 <tbody>
 <tr>
 <td>System language</td>
-<td><strong>Deutsch</strong>, English, Français</td>
+<td><strong>English</strong>, Deutsch, Français</td>
 <td>For everyone who has not chosen a language in their browser.</td>
 </tr>
 <tr>
 <td>Language of this browser</td>
-<td><strong>— as system —</strong>, Deutsch, English, Français</td>
+<td><strong>— as system —</strong>, English, Deutsch, Français</td>
 <td>Only for the browser you are using.</td>
 </tr>
 </tbody>
@@ -1190,6 +1269,90 @@ forwards. <strong>Forwarded services are reachable from the internet.</strong> U
 </tr>
 </tbody>
 </table>
+<h3 id="smart-home">Smart home</h3>
+<p><img alt="Settings: smart home" src="img/d26-settings-smarthome.webp" /></p>
+<p>The NAS can show up as a device in a smart home that speaks MQTT, for example Home Assistant.
+Home Assistant itself does not run on the NAS (it no longer supports 32-bit ARM); it runs on its
+own device, and the NAS reports to it.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Choices</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Connect to the MQTT broker</td>
+<td><strong>off</strong>, on</td>
+<td>The NAS sends its state to the broker.</td>
+</tr>
+<tr>
+<td>Broker, Port</td>
+<td>address; <strong>1883</strong> (8883 with TLS)</td>
+<td>The MQTT broker, for example the Mosquitto add-on of Home Assistant.</td>
+</tr>
+<tr>
+<td>TLS (encrypted, usually port 8883)</td>
+<td><strong>off</strong>, on</td>
+<td>Encrypted connection; the broker needs a certificate that the NAS trusts.</td>
+</tr>
+<tr>
+<td>User name, Password</td>
+<td>text</td>
+<td>The broker account. An empty password field keeps the saved password.</td>
+</tr>
+<tr>
+<td>Discovery prefix</td>
+<td><strong>homeassistant</strong></td>
+<td>Where the device description goes. Change it only if your Home Assistant uses another prefix.</td>
+</tr>
+<tr>
+<td>Send every (seconds)</td>
+<td><strong>60</strong> (10–3600)</td>
+<td>How often the values are sent.</td>
+</tr>
+<tr>
+<td>Allow restart and shut down from the smart home</td>
+<td><strong>off</strong>, on</td>
+<td>Adds the buttons <em>Restart</em> and <em>Shut down</em>. Everyone who may publish on the broker can then use them, so secure the broker with a password.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What Home Assistant shows.</strong> Home Assistant finds the NAS by itself (MQTT discovery) as a device
+named after the NAS. It shows:</p>
+<ul>
+<li>CPU, memory, swap and load</li>
+<li>board temperature and fan level</li>
+<li>per bay, the disk temperature and whether the disk sleeps; a sleeping disk is never woken for this</li>
+<li>per volume, the space used and free</li>
+<li>per disk group, a problem flag when it is degraded, and the progress of a rebuild or check</li>
+<li>what the NAS is doing (streams, devices on the shares, backup, …)</li>
+<li>the last start, and an update entry with the installed and the newest version</li>
+</ul>
+<p>Values of a disk or volume that is removed disappear from Home Assistant as well.</p>
+<p><strong>Home Assistant from anywhere.</strong> With UntrashMesh, the NAS can pass Home Assistant on to the
+devices of your mesh. Switch on <strong>Reach Home Assistant through UntrashMesh</strong> and enter the address of
+Home Assistant in your home network as <code>&lt;IP address&gt;:8123</code> (a host name works too, but an IP address
+is safer). On a phone with the UntrashApp connected, enter the address that the page shows,
+<code>http://[&lt;mesh address of the NAS&gt;]:8123</code>, in the Home Assistant app (for example as its external
+address). The port is open only inside the mesh, not in your home network or on the internet.
+From outside your home the phone must reach the NAS: see UntrashMesh in
+<a href="#16-status-logs-and-system-tools">Status, logs and system tools</a> (UPnP or UDP port 51820).</p>
+<p>Notes for Home Assistant:</p>
+<ul>
+<li>Home Assistant sees these connections as coming from the NAS. Do not add the NAS to
+  <code>trusted_networks</code>; otherwise anyone in the mesh is signed in without a password.</li>
+<li>If Home Assistant bans addresses after wrong logins (<code>ip_ban</code>), a ban of the NAS address blocks
+  every phone that comes in through the mesh. Remove the NAS from <code>ip_bans.yaml</code> to lift it.</li>
+<li>All members of the mesh reach the port, partner NAS too; Home Assistant still asks for its own login.</li>
+</ul>
+<p><strong>Media in Home Assistant.</strong> Switch on the <a href="#media-server">media server</a>. Home Assistant offers it
+through its <em>DLNA Digital Media Server</em> integration. The music, videos and photos of the published
+shares can then be picked in the media browser of Home Assistant and in scenes and automations
+(for example with the action <em>Media player: Play media</em>). The player plays the files as they are,
+so it must support their format.</p>
 <h3 id="dyndns">DynDNS</h3>
 <table>
 <thead>
@@ -1647,15 +1810,54 @@ folder (default <em>Restored</em>). The backup is copied into that folder.</p>
 <h2 id="15-updates">15. Updates</h2>
 <p><img alt="Updates" src="img/d45-updates.webp" /></p>
 <p>The page shows the installed version and the system slot it runs from (A or B).</p>
+<h3 id="updates-from-the-release-page">Updates from the release page</h3>
+<p>Once a day the NAS looks on the release page of this project (on github.com) for a newer
+UntrashOS for this device, downloads it and checks it (signature, checksums). Nothing is installed
+on its own: when an update is ready, admins see a note after signing in, and the Updates page shows
+the new version with its release notes.</p>
+<ol>
+<li>Click <strong>Install UntrashOS x.y</strong> and confirm: the image is written to the <strong>other</strong> slot.</li>
+<li>Click <strong>Restart now</strong> (or restart later).</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Values</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Check for updates every day</td>
+<td><strong>on</strong> / off</td>
+<td><strong>Check now</strong> works either way.</td>
+</tr>
+<tr>
+<td>Download updates automatically</td>
+<td><strong>on</strong> / off</td>
+<td>Off: the page shows the new version with a <strong>Download</strong> button.</td>
+</tr>
+<tr>
+<td>Channel</td>
+<td><strong>Stable releases</strong>, Beta (pre-releases too)</td>
+<td>Beta also offers test versions before a release.</td>
+</tr>
+</tbody>
+</table>
+<p>A check is one anonymous request to github.com; nothing about the NAS is sent. Only images signed by
+UntrashOS are accepted, and only versions newer than the running one are offered.</p>
+<h3 id="install-from-a-file">Install from a file</h3>
 <ol>
 <li>Click <strong>Choose a system image …</strong> and select an update file (<code>untrash-…-update.utslot</code>). A stick
    image (<code>.img</code>) is refused.</li>
 <li>The file is uploaded (with progress) and checked: signature and checksums.</li>
-<li>Click <strong>Install</strong>: the image is written to the <strong>other</strong> slot.</li>
+<li>Click <strong>Install</strong>: the image is written to the <strong>other</strong> slot. An image that is not newer than
+   the running system needs <strong>Install the older version anyway</strong>.</li>
 <li>Click <strong>Restart now</strong>.</li>
 </ol>
-<p>If the new system does not start cleanly, the loader goes back to the current one by itself. Your
-settings and data are not part of the slot and stay as they are.</p>
+<p>Either way: if the new system does not start cleanly, the loader goes back to the current one by
+itself. Your settings and data are not part of the slot and stay as they are.</p>
 <h2 id="16-status-logs-and-system-tools">16. Status, logs and system tools</h2>
 <p><strong>Status</strong> is updated every two seconds:</p>
 <p><img alt="Status" src="img/d16-status.webp" /></p>
@@ -1683,52 +1885,200 @@ settings and data are not part of the slot and stay as they are.</p>
 <td>Bottom line</td>
 <td>Load, fan level, uptime, swap in use.</td>
 </tr>
+<tr>
+<td>Processes</td>
+<td>Every running program with its user, CPU share, memory and command line. Click a column header to sort, the filter field searches name, user and command; <strong>Kernel threads</strong> also shows the kernel's own threads.</td>
+</tr>
 </tbody>
 </table>
+<p><strong>End</strong> asks a program to stop (it can still save and clean up); <strong>Kill</strong> stops it at once, without
+saving anything. Both ask first. Services of the system are usually started again automatically.
+PID 1, kernel threads and the Desk itself cannot be ended here.</p>
 <p><strong>Logs</strong> shows the system log or the log of a single service: System, SMB, Volumes, Takeover (the
 first start after way B), SSH, FTP, Media server, Desk.</p>
 <p><img alt="Logs" src="img/d46-logs.webp" /></p>
 <p><strong>Sounds</strong> edits the melodies the NAS buzzer plays for events: Start, Shut down, Error, Critical,
 Success, Device connected, Device disconnected, Warning, Standby. Events you changed are marked ★.</p>
 <p><img alt="Sounds" src="img/d47-sounds.webp" /></p>
+<p>The editor works like a small loop-based music program. The buzzer plays one tone at a time
+(square wave, 100–4000 Hz), so blocks on the timeline never overlap.</p>
 <table>
 <thead>
 <tr>
-<th>Option</th>
+<th>Part</th>
 <th>Meaning</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Tempo</td>
-<td>25–400 %. Above 100 % notes get slower and longer.</td>
-</tr>
-<tr>
-<td>Tone table</td>
-<td>Each row is a tone: name (C6, A#5, Bb4, or <em>Pause</em>), frequency in Hz, length in ms. <strong>↑</strong> moves a row, <strong>+</strong> inserts, <strong>✕</strong> deletes.</td>
-</tr>
-<tr>
-<td>+ Tone, + Pause</td>
-<td>Adds a row at the end.</td>
-</tr>
-<tr>
 <td>▶ In the browser, ▶ On the NAS, ■</td>
-<td>Plays the melody, or stops it.</td>
+<td>Plays the whole melody, or stops it. The browser plays exactly what the buzzer plays.</td>
+</tr>
+<tr>
+<td>Tempo</td>
+<td>Beats per minute (40–300). Changing it makes the melody faster or slower; its shape stays.</td>
+</tr>
+<tr>
+<td>Grid</td>
+<td>Note lengths snap to 1/8, 1/16 or 1/32 of a bar.</td>
+</tr>
+<tr>
+<td>Key, scale</td>
+<td>The rows of the timeline: only the notes of this key and scale (major, minor, pentatonic, minor pentatonic, blues, chromatic). Older melodies open in the key that holds all their notes.</td>
+</tr>
+<tr>
+<td>Arrangement</td>
+<td>The order of the patterns, each with its number of repeats (<strong>−</strong>, <strong>+</strong>). <strong>◀</strong> moves a pattern earlier, <strong>✕</strong> takes it out. <strong>+ Pattern</strong> adds an empty one, <strong>Duplicate pattern</strong> a copy of the pattern you edit. Click a pattern's name to edit it.</td>
+</tr>
+<tr>
+<td>Notes, Motifs</td>
+<td>Drag a note (choose the octave with <strong>‹ ›</strong>) or a motif (Chime, Rise, Fall, Alarm, Trill, Beep) onto the timeline.</td>
+</tr>
+<tr>
+<td>Timeline</td>
+<td>Click an empty place for a new note. Drag a block to move it in time and pitch, drag its right edge to change its length, double-click to remove it. The orange line is the end of the pattern; drag it to leave a rest before the next repeat. Keys: <strong>← →</strong> move, <strong>↑ ↓</strong> pitch, <strong>Shift + ← →</strong> length, <strong>Delete</strong> removes, <strong>Ctrl + D</strong> duplicates.</td>
+</tr>
+<tr>
+<td>Block below the timeline</td>
+<td>Note, length and <strong>modulation</strong> of the selected block: <em>Staccato</em> (short, with a gap), <em>Vibrato</em> (depth, rate), <em>Slide</em> (glide by up to two octaves), <em>Fall</em> (drops an octave at the end), <em>Arpeggio</em> (major, minor, fifth or octave chord, speed).</td>
 </tr>
 <tr>
 <td>Save, Back to built-in</td>
-<td>Saves your melody, or returns to the original.</td>
+<td>Saves your melody (at most 60 s), or returns to the original.</td>
 </tr>
 <tr>
 <td>Import sound set, Export as sound set</td>
-<td>Loads or saves all melodies as a JSON file.</td>
+<td>Loads or saves all melodies as a JSON file; the editor's patterns are part of it.</td>
 </tr>
 </tbody>
 </table>
 <p><strong>Terminal</strong> (administrators only) opens a shell on the NAS in the browser window.</p>
-<p><strong>UntrashMesh</strong> is a preview of a coming feature: several UntrashOS devices form one encrypted
-network for mirrored shares, mutual off-site backups and access on the road. It will arrive with
-an update.</p>
+<p><strong>UntrashMesh</strong> connects several UntrashOS devices to one encrypted network (WireGuard), at home and
+over the internet. No cloud provider and no fixed IP address are needed: every device keeps an
+address book of the others, and a device whose address changes tells all members at once; members
+also pass such news on, so it reaches devices the changed one cannot reach itself.</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Create the mesh</td>
+<td>This NAS starts a mesh and is its admin.</td>
+</tr>
+<tr>
+<td>Invite a device</td>
+<td>Shows an invitation text (valid once, 24 hours). Give it to the other device.</td>
+</tr>
+<tr>
+<td>Join a mesh</td>
+<td>Paste an invitation. The device becomes a member.</td>
+</tr>
+<tr>
+<td>Share… (per member)</td>
+<td>Offers shares of this NAS to that member, <strong>read only</strong> or <strong>read/write</strong>.</td>
+</tr>
+<tr>
+<td>Remove (admins)</td>
+<td>Takes a member out; its connections and offered shares end.</td>
+</tr>
+<tr>
+<td>Leave the mesh</td>
+<td>This NAS leaves; to come back it needs a new invitation.</td>
+</tr>
+</tbody>
+</table>
+<p>Members reach each other by name: <code>\\&lt;name&gt;.mesh</code> for shares, <code>http://&lt;name&gt;.mesh</code> for the Desk.
+Over the internet at least one side needs a router with UPnP, or a forwarding of UDP port 51820;
+UntrashOS asks the router itself when UPnP is on.</p>
+<p><strong>Partner volumes (co-op mode).</strong> Shares a member offers appear on this NAS as partner volumes:
+under <strong>Storage</strong> and in the <strong>UntrashMesh</strong> window. Under <strong>Shares</strong> you can make shares on them for
+your own users, like on any volume. The member decides what you may do (read only or read/write);
+partner volumes are reachable only over UntrashMesh, and they are unavailable while the member is
+offline. Administrators also find them in <strong>Files</strong> under <strong>Partner volumes</strong> and can work on them there
+directly.</p>
+<p><strong>Off-site mirror.</strong> A member can keep a complete copy of a data volume of this NAS (RAID 1 over
+UntrashMesh), so the data survives a fire or a theft at one place. In the <strong>UntrashMesh</strong> window
+choose <strong>Mirror a volume…</strong>, the volume and the member. The member's admin must agree and choose a
+volume for the copy, with as much free space as your volume is large. The mirror starts with the
+next restart of this NAS.</p>
+<ul>
+<li>Writes go to your volume first and to the partner as fast as the line allows. While the partner
+  is not reachable, the changes are kept and sent when it is back.</li>
+<li>Your volume keeps its format: without the mirror it is mounted as before.</li>
+<li>If the mirror cannot start at a restart, the volume is mounted directly and the copy is sent
+  again completely once the partner is reachable (<strong>needs a full resync</strong>).</li>
+<li>The volume of the running system cannot be mirrored.</li>
+<li>The copy is not encrypted on the partner (the connection is): choose a member whose
+  administrator you trust with the data.</li>
+<li><strong>End</strong> (either side): your volume stays as it is and is mounted without the mirror from the next
+  restart on; the partner deletes its copy.</li>
+</ul>
+<p><strong>Office.</strong> Documents stay on the NAS and are edited in the browser by an office server that runs
+elsewhere (Collabora Online, Nextcloud Office or ONLYOFFICE; it needs more memory than the NAS has).
+Under <strong>Settings → Office</strong> an admin enters the address of the office server and the address under
+which that server reaches this NAS (for example <code>http://untrash.local</code>, or <code>http://&lt;name&gt;.mesh</code>
+over UntrashMesh). <strong>Save and check</strong> lists the document types the office server supports. Files
+then shows <strong>Open in Office</strong> for them; the document opens in a new tab and is saved back to the
+NAS. In the editor, <strong>Save As</strong> and <strong>Export As</strong> (for example as PDF) ask for a name and put the
+copy in the same folder on the NAS. Everyone keeps the rights of the share: with read-only access the document opens read-only.
+The office server must allow this NAS as storage; see its documentation. Without this setting, a
+Nextcloud can also mount the shares as External storage (WebDAV, see Services, or SMB).</p>
+<p><strong>Nextcloud.</strong> A Nextcloud with the UntrashOS app (in development, not released yet) can join
+UntrashMesh as a member. An admin chooses <strong>UntrashMesh → Connect a Nextcloud</strong>, picks the shares
+the Nextcloud may follow and gives the invitation (valid once, 24 hours) to the Nextcloud admin,
+who pastes it under <strong>Administration settings → UntrashOS</strong>. While it joins, the Nextcloud must
+reach this NAS (same network, or over the internet with UPnP on the router).</p>
+<ul>
+<li>The Nextcloud keeps the mesh's address book at its internet address. When members lose each
+  other, for example because the internet address at home changed, they find each other again
+  through it. It only stores what the members signed, so it cannot redirect anyone; it does see
+  their addresses, so connect a Nextcloud you trust.</li>
+<li>This NAS tells the Nextcloud which files changed in the shares it follows. The Nextcloud then
+  does not have to scan the shares, and the disks can sleep.</li>
+<li>The Nextcloud reads the files over WebDAV (switch it on under <strong>Settings → Services</strong>), with the
+  rights of each user.</li>
+<li><strong>Shares…</strong> (per Nextcloud) changes the shares it follows on this NAS. On other NAS of the mesh
+  an admin chooses them there.</li>
+<li>A Nextcloud on a rented server cannot reach this NAS at home by its home network address. Do
+  not forward the WebDAV ports on the router: that would put the users' passwords on the
+  internet. Instead, the Nextcloud server admin sets up the app's tunnel helper (see the app's
+  README). The NAS then connects to the server through UntrashMesh, and the Nextcloud reaches the
+  shares inside that encrypted link. Nothing is forwarded at home.</li>
+</ul>
+<p><strong>UntrashApp.</strong> The UntrashApp for phones (in development, not released yet) joins UntrashMesh
+and signs in on the NAS as one Desk user. An admin pairs it under <strong>UntrashMesh → Pair the
+UntrashApp</strong>: choose the user, then scan the QR code with the app (valid once, for one hour). On
+other NAS of the mesh an admin links the app to a user there with <strong>Link…</strong>.</p>
+<p>Under <strong>Account</strong>, every user with a paired app chooses how to sign in (the password is needed to
+change it):</p>
+<table>
+<thead>
+<tr>
+<th>Sign in with</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Password only</td>
+<td>as before</td>
+</tr>
+<tr>
+<td>Password or the UntrashApp</td>
+<td>on the sign-in page, <strong>Sign in with the UntrashApp</strong> shows a number; choose the same number in the app</td>
+</tr>
+<tr>
+<td>Password and the UntrashApp</td>
+<td>after the password the app must confirm as well; installing updates, deleting users and similar actions also need a confirmation in the app</td>
+</tr>
+</tbody>
+</table>
+<p>Lost phone: an administrator chooses <strong>Reset to password</strong> for that user under <strong>Users</strong>. For the
+admin account, the RESET button on the NAS (admin password reset) also resets the sign-in.</p>
 <p><strong>Feedback</strong> prepares a bug report or a suggestion as a GitHub issue. Nothing is sent
 automatically.</p>
 <p><img alt="Feedback" src="img/d49-feedback.webp" /></p>
@@ -1768,15 +2118,43 @@ automatically.</p>
 <p><strong>Power button</strong> (end of the dock): <strong>Run</strong> switches the NAS off. With <em>Restart instead</em> it
 restarts. All connections are closed.</p>
 <p><img alt="Switch off or restart" src="img/d50-power-dialog.webp" /></p>
-<p><strong>Your user name</strong> (top bar): change the <em>language of this browser</em> (— as system —, Deutsch,
-English, Français) or <strong>Sign out</strong>.</p>
+<p><strong>Your user name</strong> (top bar) opens <strong>Account</strong>: change the <em>language of this browser</em> (— as system —,
+English, Deutsch, Français), the <strong>Appearance</strong>, or <strong>Sign out</strong>.</p>
+<p><strong>Appearance</strong> belongs to your user: it is stored on the NAS and follows you to every browser you
+sign in with. It applies at once.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Values</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Theme</td>
+<td>Automatic (as the system), <strong>Dark</strong>, Light, High contrast</td>
+<td><em>Automatic</em> follows the light/dark and "more contrast" setting of your computer or phone. <em>High contrast</em>: black background, white text, strong borders, no transparency or wallpaper.</td>
+</tr>
+<tr>
+<td>Colour vision</td>
+<td><strong>Normal colour vision</strong>, Red-weak (protanopia), Green-weak (deuteranopia), Blue-weak (tritanopia), No colour vision (achromatopsia)</td>
+<td>Other colours for states (healthy, warning, error, information) that stay apart for that kind of colour vision, plus a symbol on each state (✓ ! ✕ i) and stripes on warning and error bars, so that nothing depends on colour alone.</td>
+</tr>
+<tr>
+<td>Reduce motion</td>
+<td><strong>off</strong> / on</td>
+<td>No animations (also on when your system asks for reduced motion).</td>
+</tr>
+</tbody>
+</table>
 <h2 id="17-working-as-a-normal-user">17. Working as a normal user</h2>
 <p>Users who are not administrators see a smaller Desk: <strong>Files</strong>, <strong>Channels</strong>, <strong>Manual</strong> and
 <strong>My account</strong>. They see only the shares they have rights to and can only change what those rights
 allow.</p>
 <p><img alt="Files as user anna" src="img/d52-user-anna-files.webp" /></p>
 <p><strong>My account</strong>: <em>Current password</em>, <em>New password</em>, <em>Repeat</em>, then <strong>Change password</strong>. <strong>Sign out</strong>
-ends the session.</p>
+ends the session. <strong>Appearance</strong> below works as described in <a href="#3-working-with-the-desk">section 3</a>.</p>
 <h2 id="18-back-to-the-zyxel-firmware">18. Back to the Zyxel firmware</h2>
 <p>UntrashOS can always go back to the original Zyxel firmware with the backup on the installation
 stick. Data on the disks stays. The UntrashOS files in <code>/.untrash</code> (ways B and C) or the UntrashOS
@@ -1789,7 +2167,9 @@ stick and choose <a href="#15-the-four-ways">way D</a>.</p>
 <ol>
 <li>The backup is checked against its checksums, and the stick gets the <code>ROLLBACK</code> order.</li>
 <li>The NAS restarts and runs the Zyxel firmware once. The firmware writes its boot data back from
-   the backup and switches the NAS off after a few minutes. Leave the stick in.</li>
+   the backup and switches the NAS off after a few minutes. Leave the stick in. If the NAS stays
+   on (seen on a NAS540, see <a href="#13-first-run-under-the-zyxel-firmware">section 1.3</a>), switch it off by
+   hand once it has left the network for a few minutes.</li>
 <li>Switch the NAS on: it starts the Zyxel firmware as before the installation.</li>
 </ol>
 </main></body></html>
